@@ -5,10 +5,10 @@ package com.polopoly.jboss;
  */
 public class ArtifactData {
 
-    String groupId;
-    String artifactId;
-    String version;
-    String packaging;
+    public String groupId;
+    public String artifactId;
+    public String version;
+    public String packaging;
 
     @Override
     public String toString() {
