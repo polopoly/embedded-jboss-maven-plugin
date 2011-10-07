@@ -25,21 +25,53 @@ import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.mojo.jboss.StartAndWaitMojo;
+import org.codehaus.mojo.jboss.StartMojo;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
 import org.codehaus.plexus.util.Expand;
 
+import javax.management.MBeanServerConnection;
 import java.io.File;
 
 /**
  * Goal which touches a timestamp file.
  *
  * @extendsPlugin jboss
- * @extendsGoal start-and-wait
+ * @extendsGoal start
  *
  * @goal run
  */
-public class JBossEmbeddedMojo extends StartAndWaitMojo
+public class JBossEmbeddedMojo extends StartMojo
 {
+    private static final long ONE_SECOND = 1 * 1000;
+
+    /**
+     * Maximum number of retries to get JBoss JMX MBean connection.
+     *
+     * @parameter default-value="4" expression="${jboss.retry}"
+     */
+    protected int retry;
+
+    /**
+     * Wait in ms before each retry of the JBoss JMX MBean connection.
+     *
+     * @parameter default-value="5000" expression="${jboss.retryWait}"
+     */
+    protected int retryWait;
+
+    /**
+     * Time in ms to start the application server (once JMX MBean connection has been reached).
+     *
+     * @parameter default-value="20000" expression="${jboss.timeout}"
+     */
+    protected int timeout;
+
+    /**
+     * The port for the naming service.
+     *
+     * @parameter default-value="1099" expression="${jboss.namingPort}"
+     */
+    protected String namingPort;
+
     /**
      * The location of JBoss Home.
      *
@@ -96,6 +128,33 @@ public class JBossEmbeddedMojo extends StartAndWaitMojo
             }
         }
         super.execute();
+
+        getLog().info("Establishing JBoss Connection");
+        JBossOperator operator = new JBossOperator(new Integer(namingPort), getUsername(), getPassword(), retry, retryWait/1000, getLog());
+        JBossOperations operations = new JBossOperations(operator.connect());
+
+        getLog().info("Checking JBoss State");
+        // Wait until server startup is complete
+        boolean started = false;
+        long startTime = System.currentTimeMillis();
+        while (!started && System.currentTimeMillis() - startTime < timeout)
+        {
+            try
+            {
+                Thread.sleep(ONE_SECOND);
+                started = operations.isStarted();
+            }
+            catch (Exception e)
+            {
+                throw new MojoExecutionException("Unable to wait: " + e.getMessage(), e);
+            }
+        }
+        if (!started)
+        {
+            throw new MojoExecutionException("JBoss AS is not stared before timeout has expired!");
+        }
+        getLog().info("JBoss started!");
+
 
         try {
             Thread.sleep(99999999);
