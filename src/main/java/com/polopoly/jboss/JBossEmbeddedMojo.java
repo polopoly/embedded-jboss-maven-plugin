@@ -19,13 +19,13 @@ package com.polopoly.jboss;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.mojo.jboss.StartAndWaitMojo;
-import org.codehaus.plexus.archiver.UnArchiver;
 import org.codehaus.plexus.archiver.manager.ArchiverManager;
-import org.codehaus.plexus.archiver.zip.ZipUnArchiver;
 import org.codehaus.plexus.util.Expand;
 
 import java.io.File;
@@ -37,8 +37,6 @@ import java.io.File;
  * @extendsGoal start-and-wait
  *
  * @goal run
- * 
- * @phase process-sources
  */
 public class JBossEmbeddedMojo extends StartAndWaitMojo
 {
@@ -53,9 +51,14 @@ public class JBossEmbeddedMojo extends StartAndWaitMojo
     /**
      * The jboss distribution.
      * @parameter
-     * @required
      */
-    protected JBossArtifact jbossDistribution = null;
+    protected JBossDistribution jbossDistribution = JBossDistribution.DEFAULT_JBOSS_DISTRIUTION;
+
+    /**
+     * Artifact Deployments
+     * @parameter
+     */
+    protected ArtifactData[] artifactDeployments = new ArtifactData[0];
 
     /**
      * The Maven project object.
@@ -79,9 +82,6 @@ public class JBossEmbeddedMojo extends StartAndWaitMojo
     /** @component */
     private ArtifactFactory factory;
 
-    /** @component */
-    private ArchiverManager archiverManager;
-
     @Override
     public void execute()
         throws MojoExecutionException
@@ -89,20 +89,7 @@ public class JBossEmbeddedMojo extends StartAndWaitMojo
         super.jbossHome = jbossHome;
         if (!jbossHome.exists()) {
             try {
-                Artifact artifact =
-                        factory.createBuildArtifact(jbossDistribution.groupId,
-                                                    jbossDistribution.artifactId,
-                                                    jbossDistribution.version,
-                                                    "zip");
-                resolver.resolve(artifact, project.getRemoteArtifactRepositories(), localRepository);
-
-                getLog().info("Installing JBoss to '" + jbossHome + "'");
-                Expand expander = new Expand();
-                expander.setDest(jbossHome);
-                expander.setSrc(artifact.getFile());
-                expander.execute();
-
-                new File(jbossHome, "bin/run.sh").setExecutable(true);
+                performJBossInstallation(jbossHome, jbossDistribution);
 
             } catch (Exception e) {
                 throw new MojoExecutionException("Unable to download jboss distribution:"  + jbossDistribution, e);
@@ -113,7 +100,33 @@ public class JBossEmbeddedMojo extends StartAndWaitMojo
         try {
             Thread.sleep(99999999);
         } catch (InterruptedException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
+    }
+
+    private void performJBossInstallation(File target, JBossDistribution jboss)
+            throws ArtifactResolutionException, ArtifactNotFoundException, MojoExecutionException
+    {
+        // Resolve jboss
+        Artifact artifact =
+                factory.createBuildArtifact(jboss.groupId,
+                                            jboss.artifactId,
+                                            jboss.version,
+                                            jboss.packaging);
+        resolver.resolve(artifact, project.getRemoteArtifactRepositories(), localRepository);
+
+        // Install jboss
+        getLog().info("Installing JBoss to '" + target + "'");
+        Expand expander = new Expand();
+        expander.setDest(target);
+        expander.setSrc(artifact.getFile());
+        try {
+            expander.execute();
+        } catch (Exception e) {
+            throw new MojoExecutionException("Unable to expand jboss archive", e);
+        }
+
+        // Make sure the execution flag is lit
+        new File(target, "bin/run.sh").setExecutable(true);
     }
 }
