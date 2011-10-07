@@ -7,14 +7,41 @@
   <version>1.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
-  <name>maven-embedded-jboss-plugin Maven Plugin</name>
-  <url>http://maven.apache.org</url>
+  <name>Embedded JBoss Maven Plugin</name>
+  <description>Downloads and runs jboss from within maven</description>
+  <url>http://github.com/polopoly/maven-embedded-jboss-plugin</url>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:git://github.com/polopoly/maven-embedded-jboss-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:polopoly/maven-ebedded-jboss-plugin.git</developerConnection>
+  </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>polopoly-product</id>
+      <name>Polopoly Product</name>
+      <url>http://maven.polopoly.com/nexus/content/repositories/polopoly-product</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <dependencies>
+      <dependency>
+        <groupId>jboss</groupId>
+        <artifactId>jbossall-client</artifactId>
+        <version>4.0.5</version>
+    </dependency>
     <dependency>
       <groupId>org.codehaus.mojo</groupId>
       <artifactId>jboss-maven-plugin</artifactId>
