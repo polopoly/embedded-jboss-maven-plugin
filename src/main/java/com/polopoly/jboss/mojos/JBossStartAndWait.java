@@ -1,6 +1,6 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.AbstractJBossMojo;
+import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -10,7 +10,7 @@ import org.apache.maven.plugin.MojoFailureException;
  * @execute goal="start"
  * @goal start-and-wait
  */
-public class JBossStartAndWait extends AbstractJBossMojo {
+public class JBossStartAndWait extends AbstractJBossMBeanMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         info("Waiting for JBoss to become ready");

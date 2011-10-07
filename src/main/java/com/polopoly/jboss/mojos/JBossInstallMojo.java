@@ -1,16 +1,9 @@
 package com.polopoly.jboss.mojos;
 
+import com.polopoly.jboss.AbstractJBossMojo;
 import com.polopoly.jboss.JBossDistribution;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.Expand;
 
 import java.io.File;
@@ -20,7 +13,7 @@ import java.io.File;
  *
  * @goal install
  */
-public class JBossInstallMojo extends AbstractMojo {
+public class JBossInstallMojo extends AbstractJBossMojo {
 
     /**
      * The location of JBoss Home.
@@ -37,72 +30,43 @@ public class JBossInstallMojo extends AbstractMojo {
     protected JBossDistribution jbossDistribution = JBossDistribution.DEFAULT_JBOSS_DISTRIUTION;
 
     /**
+     * The jboss distribution. If specified the takes precedence over jbossDistribution.
+     * @parameter
+     */
+    protected File jbossDistributionFile;
+
+    /**
      * Force re-installation of jboss
      *
      * @parameter expression="${jboss.reinstall}"
      */
     protected boolean reinstall;
 
-    /**
-     * The local repository where the artifacts are located.
-     *
-     * @parameter expression="${localRepository}"
-     */
-    private ArtifactRepository localRepository;
-
 
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (reinstall || !jbossHome.exists()) {
             try {
-                performJBossInstallation(jbossHome, jbossDistribution);
+                if (jbossDistributionFile == null) {
+                    jbossDistributionFile = resolveArtifact(jbossDistribution).getFile();
+                }
+
+                // Install jboss
+                info("Installing '%s' to '%s'", jbossDistributionFile, jbossHome);
+                Expand expander = new Expand();
+                expander.setSrc(jbossDistributionFile);
+                expander.setDest(jbossHome);
+                try {
+                    expander.execute();
+                } catch (Exception e) {
+                    throw new MojoExecutionException("Unable to expand jboss archive", e);
+                }
+
+                // Make sure the execution flag is lit
+                new File(jbossHome, "bin/run.sh").setExecutable(true);
 
             } catch (Exception e) {
                 throw new MojoExecutionException("Unable to download jboss distribution:"  + jbossDistribution, e);
             }
         }
     }
-
-    private void performJBossInstallation(File target, JBossDistribution jboss)
-            throws ArtifactResolutionException, ArtifactNotFoundException, MojoExecutionException
-    {
-        // Resolve jboss
-        Artifact artifact =
-                factory.createBuildArtifact(jboss.groupId,
-                                            jboss.artifactId,
-                                            jboss.version,
-                                            jboss.packaging);
-        resolver.resolve(artifact, project.getRemoteArtifactRepositories(), localRepository);
-
-        // Install jboss
-        getLog().info("Installing JBoss to '" + target + "'");
-        Expand expander = new Expand();
-        expander.setDest(target);
-        expander.setSrc(artifact.getFile());
-        try {
-            expander.execute();
-        } catch (Exception e) {
-            throw new MojoExecutionException("Unable to expand jboss archive", e);
-        }
-
-        // Make sure the execution flag is lit
-        new File(target, "bin/run.sh").setExecutable(true);
-    }
-
-    // -----------------------------------------
-    // Components
-    // -----------------------------------------
-    /**
-      * The Maven project object.
-      *
-      * @parameter expression="${project}"
-      * @required
-      * @readonly
-      */
-    private MavenProject project;
-
-    /** @component */
-    private ArtifactResolver resolver;
-
-    /** @component */
-    private ArtifactFactory factory;
 }

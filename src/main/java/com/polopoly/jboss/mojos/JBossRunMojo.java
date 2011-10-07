@@ -16,7 +16,7 @@ package com.polopoly.jboss.mojos;
  * limitations under the License.
  */
 
-import com.polopoly.jboss.AbstractJBossMojo;
+import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -26,7 +26,7 @@ import org.apache.maven.plugin.MojoFailureException;
  * @execute goal="deploy"
  * @goal run
  */
-public class JBossRunMojo extends AbstractJBossMojo
+public class JBossRunMojo extends AbstractJBossMBeanMojo
 {
     public void execute() throws MojoExecutionException, MojoFailureException {
         info("Sleeping");

@@ -1,6 +1,6 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.AbstractJBossMojo;
+import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import com.polopoly.jboss.ArtifactData;
 import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.artifact.Artifact;
@@ -18,7 +18,7 @@ import java.net.URL;
  * 
  * @execute goal="start-and-wait"
  */
-public class JBossDeployMojo extends AbstractJBossMojo {
+public class JBossDeployMojo extends AbstractJBossMBeanMojo {
 
     /**
      * File to be deployed
