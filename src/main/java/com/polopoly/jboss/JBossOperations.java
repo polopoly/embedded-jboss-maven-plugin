@@ -1,7 +1,12 @@
 package com.polopoly.jboss;
 
-import javax.management.*;
-import java.io.IOException;
+import org.apache.maven.plugin.MojoExecutionException;
+
+import javax.management.MBeanException;
+import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import java.net.URL;
 
 /**
  * Created by bitter on 2011-10-07
@@ -18,8 +23,16 @@ public class JBossOperations {
         return (Boolean) getAttribute("jboss.system:type=Server", "Started");
     }
 
-    public void shutDown() {
-        invoke("jboss.system:type=Server", "shutdown", null, null);
+    public boolean isDeployed(URL url) throws MojoExecutionException {
+        return (Boolean) invoke("jboss.system:service=MainDeployer", "isDeployed", url);
+    }
+
+    public void redeploy(URL url) throws MojoExecutionException {
+        invoke("jboss.system:service=MainDeployer", "redeploy", url);
+    }
+
+    public void shutDown() throws MojoExecutionException {
+        invoke("jboss.system:type=Server", "shutdown");
     }
 
     // -----------------------------------------------------------
@@ -37,15 +50,21 @@ public class JBossOperations {
         }
     }
 
-    private Object invoke(String name, String operation, Object[] types, String[] values) {
-        return invoke(objectName(name), operation, types, values);
+    private Object invoke(String name, String operation) throws MojoExecutionException {
+        return invoke(objectName(name), operation, null, null); 
     }
 
-    private Object invoke(ObjectName name, String operation, Object[] types, String[] values) {
+    private Object invoke(String name, String operation, Object value) throws MojoExecutionException {
+        return invoke(objectName(name), operation, new Object[]{value}, new String[]{value.getClass().getName()});
+    }
+
+    private Object invoke(ObjectName name, String operation, Object[] values, String[] types) throws MojoExecutionException {
         try {
-            return _server.invoke(name, operation, types, values);
+            return _server.invoke(name, operation, values, types);
+        } catch (MBeanException e) {
+            throw new MojoExecutionException("Failed to invoke operation '" + operation + "'", e);
         } catch (Exception e) {
-            throw new RuntimeException("Unable to execute mbean operation '" + name + "'.'" + operation + "'");
+            throw new MojoExecutionException("Unable to execute mbean operation '" + name + "'.'" + operation + "'", e);
         }
     }
 
