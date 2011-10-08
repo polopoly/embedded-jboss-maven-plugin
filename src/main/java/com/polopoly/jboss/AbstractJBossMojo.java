@@ -27,7 +27,7 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
      * username/password to use when authenticating with the JBoss server. If no value is specified, a default username
      * and password will be used.
      *
-     * @parameter expression="${jboss.serverId}"
+     * @parameter default-value="default" expression="${jboss.serverId}"
      */
     protected String serverId;
 
@@ -74,10 +74,11 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
         for (int i = 0; i < artifacts.length; i++) {
             Artifact mavenArtifact =
                 mavenArtifacts[i] =
-                        factory.createBuildArtifact(artifacts[i].groupId,
-                                                    artifacts[i].artifactId,
-                                                    artifacts[i].version,
-                                                    artifacts[i].packaging);
+                        factory.createArtifactWithClassifier(artifacts[i].groupId,
+                                                             artifacts[i].artifactId,
+                                                             artifacts[i].version,
+                                                             artifacts[i].type,
+                                                             artifacts[i].classifier);
             try {
                 resolver.resolve(mavenArtifact, project.getRemoteArtifactRepositories(), localRepository);
             } catch (Exception e) {

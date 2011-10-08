@@ -8,7 +8,8 @@ public class ArtifactData {
     public String groupId;
     public String artifactId;
     public String version;
-    public String packaging;
+    public String classifier;
+    public String type;
 
     @Override
     public String toString() {
@@ -16,7 +17,8 @@ public class ArtifactData {
                 "groupId='" + groupId + '\'' +
                 ", artifactId='" + artifactId + '\'' +
                 ", version='" + version + '\'' +
-                ", packaging='" + packaging + '\'' +
+                ", classifier='" + classifier + '\'' +
+                ", type='" + type + '\'' +
                 '}';
     }
 }
