@@ -3,13 +3,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.polopoly.jboss</groupId>
-  <artifactId>maven-embedded-jboss-plugin</artifactId>
+  <artifactId>embedded-jboss-maven-plugin</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Embedded JBoss Maven Plugin</name>
   <description>Downloads and runs jboss from within maven</description>
-  <url>http://github.com/polopoly/maven-embedded-jboss-plugin</url>
+  <url>http://github.com/polopoly/embedded-jboss-maven-plugin</url>
 
   <licenses>
     <license>
@@ -20,8 +20,8 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git://github.com/polopoly/maven-embedded-jboss-plugin.git</connection>
-    <developerConnection>scm:git:git@github.com:polopoly/maven-ebedded-jboss-plugin.git</developerConnection>
+    <connection>scm:git:git://github.com/polopoly/embedded-jboss-maven-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:polopoly/embedded-jboss-maven-plugin.git</developerConnection>
   </scm>
 
   <distributionManagement>
