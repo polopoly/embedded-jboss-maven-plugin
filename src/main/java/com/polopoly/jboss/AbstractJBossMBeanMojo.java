@@ -1,7 +1,6 @@
 package com.polopoly.jboss;
 
 import org.apache.maven.plugin.MojoExecutionException;
-import org.codehaus.mojo.jboss.JBossServerUtil;
 import org.jboss.security.SecurityAssociation;
 import org.jboss.security.SimplePrincipal;
 
@@ -9,9 +8,6 @@ import javax.management.MBeanServerConnection;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.io.File;
-import java.io.IOException;
-import java.rmi.RMISecurityManager;
 import java.util.Properties;
 
 /**
@@ -40,8 +36,14 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
      */
     protected String namingPort;
 
+    private volatile MBeanServerConnection _connection;
+
 
     public MBeanServerConnection connect() throws MojoExecutionException {
+
+        if (_connection != null) {
+            return _connection;
+        }
 
         InitialContext ctx = getInitialContext();
 
@@ -73,6 +75,7 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
         {
             throw new MojoExecutionException( "Unable to get JBoss JMX MBean connection: " + ne.getMessage(), ne );
         }
+        _connection = server;
         return server;
     }
 
@@ -105,32 +108,6 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
         catch ( NamingException e )
         {
             throw new MojoExecutionException( "Unable to instantiate naming context: " + e.getMessage(), e );
-        }
-    }
-
-    /**
-     * Set up the security manager to allow remote code to execute.
-     */
-    protected void initializeRMISecurityPolicy() {
-        try
-        {
-            File policyFile = File.createTempFile( "jboss-client", ".policy" );
-            policyFile.deleteOnExit();
-            JBossServerUtil.writeSecurityPolicy(policyFile);
-            // Get sthe canonical file which expands the shortened directory names in Windows
-            policyFile = policyFile.getCanonicalFile();
-            System.setProperty( "java.security.policy", policyFile.toURI().toString() );
-            System.setSecurityManager( new RMISecurityManager() );
-        }
-        catch ( IOException e )
-        {
-            warn("Unable to create security policy file for loading remote classes: " + e.getMessage(), e);
-            warn("Will try to load required classes from local classpath.");
-        }
-        catch ( SecurityException e )
-        {
-            warn("Unable to set security manager for loading remote classes: " + e.getMessage(), e);
-            warn("Will try to load required classes from local classpath.");
         }
     }
 }

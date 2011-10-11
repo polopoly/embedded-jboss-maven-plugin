@@ -8,6 +8,7 @@ import org.apache.maven.plugin.MojoFailureException;
 /**
  * Created by bitter on 2011-10-07
  * @goal stop
+ * @aggregator
  */
 public class JBossStopMojo extends AbstractJBossMBeanMojo {
 

@@ -15,10 +15,9 @@ import java.net.URL;
  * Created by bitter on 2011-10-07
  *
  * @goal deploy
- * 
- * @execute goal="start-and-wait"
+ * @aggregator
  */
-public class JBossDeployMojo extends AbstractJBossMBeanMojo {
+public class JBossDeployMojo extends JBossStartAndWait {
 
     /**
      * File to be deployed
@@ -36,6 +35,21 @@ public class JBossDeployMojo extends AbstractJBossMBeanMojo {
 
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+
+        info("Determining if JBoss needs to be installed");
+        install();
+
+        info("Starting JBoss");
+        start();
+
+        info("Waiting for JBoss to become ready");
+        waitForJBossToStart();
+
+        info("Deploying artifacts");
+        deployAndWait();
+    }
+
+    protected void deployAndWait() throws MojoExecutionException, MojoFailureException {
         JBossOperations operations = new JBossOperations(connect());
         if (file != null) {
             redeploy(operations, file);
@@ -51,7 +65,7 @@ public class JBossDeployMojo extends AbstractJBossMBeanMojo {
         info("All deployments done!");
     }
 
-    public void waiForDeployment(JBossOperations operations, File file) throws MojoExecutionException {
+    protected void waiForDeployment(JBossOperations operations, File file) throws MojoExecutionException {
         try {
             waitForDeployment(operations, file.toURI().toURL());
         } catch (MalformedURLException e) {
@@ -59,7 +73,7 @@ public class JBossDeployMojo extends AbstractJBossMBeanMojo {
         }
     }
 
-    public void waitForDeployment(JBossOperations operations, URL url) throws MojoExecutionException {
+    protected void waitForDeployment(JBossOperations operations, URL url) throws MojoExecutionException {
         info("Waiting for: " + url);
         for (int i = 0; i < retry && !operations.isDeployed(url); ++i)
         {
@@ -73,7 +87,7 @@ public class JBossDeployMojo extends AbstractJBossMBeanMojo {
         }
     }
 
-    public void redeploy(JBossOperations operations, File file) throws MojoExecutionException {
+    protected void redeploy(JBossOperations operations, File file) throws MojoExecutionException {
         try {
             redeploy(operations, file.toURI().toURL());
         } catch (MalformedURLException e) {
@@ -81,7 +95,7 @@ public class JBossDeployMojo extends AbstractJBossMBeanMojo {
         }
     }
 
-    public void redeploy(JBossOperations operations, URL url) throws MojoExecutionException {
+    protected void redeploy(JBossOperations operations, URL url) throws MojoExecutionException {
         info("Deploying: " + url);
         operations.redeploy(url);
     }
