@@ -23,12 +23,13 @@ import org.apache.maven.plugin.MojoFailureException;
 /**
  * Goal which touches a timestamp file.
  *
- * @execute goal="deploy"
  * @goal run
+ * @aggregator
  */
-public class JBossRunMojo extends AbstractJBossMBeanMojo
+public class JBossRunMojo extends JBossDeployMojo
 {
     public void execute() throws MojoExecutionException, MojoFailureException {
+        super.execute();
         info("Sleeping");
         try {
             Thread.sleep(999999);
