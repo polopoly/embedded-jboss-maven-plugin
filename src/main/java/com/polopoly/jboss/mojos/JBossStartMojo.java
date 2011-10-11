@@ -1,5 +1,6 @@
 package com.polopoly.jboss.mojos;
 
+import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
@@ -10,12 +11,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by bitter on 2011-10-07
  *
+ * This goal will installI a jboss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
  * @goal start
  * @aggregator
  */
-public class JBossStartMojo extends JBossInstallMojo {
+public class JBossStartMojo extends JBossDeployMojo {
 
     /**
      * The set of options to pass to the JBoss "run" command.
@@ -25,24 +26,46 @@ public class JBossStartMojo extends JBossInstallMojo {
     protected String startOptions;
 
     /**
-     * The command to start JBoss.
+     * Pipes stdout and stderr from the jboss process to the maven console.
+     * 
+     * @parameter expression="${jboss.logToConsole}"
+     */
+    protected boolean logToConsole;
+
+    /**
+     * The command to startIfNamingPortIsFree JBoss.
      */
     public static final String STARTUP_COMMAND = "run";
 
+    /**
+     * This goal will installI a jboss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
+     *
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     */
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (!isStarted()) {
-            // Do installation
-            install();
-
-            // Launch jboss
-            start();
-            
-        } else {
-            info("Server already started");
+        if (isNamingPortFree()) {
+            info("JBoss is already running?");
+            throw new MojoExecutionException("There is already a process occupying port " + namingPort);
         }
+
+
+        // Do installation (if not installed)
+        installIfNotAlreadyInstalled();
+
+        // Launch jboss
+        startIfNamingPortIsFree();
+
+        // Deploy artifacts
+        deployAndWait();
     }
 
-    protected boolean isStarted() {
+
+    /**
+     * Determine whether <code>namingPort</code> is free.
+     * @return
+     */
+    protected boolean isNamingPortFree() {
         try {
             new Socket("127.0.0.1", new Integer(namingPort));
         } catch (IOException e) {
@@ -52,14 +75,15 @@ public class JBossStartMojo extends JBossInstallMojo {
     }
 
     /**
-     * Call the JBoss startup or shutdown script.
+     * Start JBoss If <code>namingPort</code> is free.
      *
      * @throws MojoExecutionException
      */
-    protected void start()
+    protected void startIfNamingPortIsFree()
         throws MojoExecutionException
     {
-        if (!isStarted()) {
+        if (!isNamingPortFree()) {
+            info("Starting JBoss");
             if (startOptions == null) {
                 startOptions = "";
             }
@@ -73,12 +97,23 @@ public class JBossStartMojo extends JBossInstallMojo {
 
             try {
                 Process proc = Runtime.getRuntime().exec(jbossStartCommand, jbossStartEnvironment, new File(jbossHome, "bin"));
-                new JBossLogger(proc.getInputStream()).start();
-                new JBossLogger(proc.getErrorStream()).start();
+                new JBossLogger(proc.getInputStream(), "out", logToConsole).start();
+                new JBossLogger(proc.getErrorStream(), "err", logToConsole).start();
 
             } catch (IOException ioe) {
-                throw new MojoExecutionException("Unable to start jboss!", ioe);
+                throw new MojoExecutionException("Unable to startIfNamingPortIsFree jboss!", ioe);
             }
+        }
+
+        // Wait for jboss to become ready
+        JBossOperations operations = new JBossOperations(connect());
+        for (int i = 0; i < retry; i++) {
+            if (operations.isStarted()) {
+                break;
+            }
+            try {
+                Thread.sleep(retryWait);
+            } catch (InterruptedException e) {}
         }
     }
 
@@ -102,9 +137,15 @@ public class JBossStartMojo extends JBossInstallMojo {
     }
 
     private class JBossLogger extends Thread {
+
         private final BufferedReader _stream;
-        JBossLogger(InputStream stream) {
+        private final String _logName;
+        private final boolean _log;
+
+        JBossLogger(InputStream stream, String logName, boolean log) {
             _stream = new BufferedReader(new InputStreamReader(stream));
+            _logName = logName;
+            _log = log;
         }
 
         public void run() {
@@ -112,7 +153,9 @@ public class JBossStartMojo extends JBossInstallMojo {
             String line;
             try {
                 while ((line = _stream.readLine()) != null) {
-                    //info(line);
+                    if (_log) {
+                      info(" -- log(%s) -- %s", _logName, line);
+                    }
                 }
 
             } catch (IOException ioe) {}

@@ -13,7 +13,7 @@ import org.apache.maven.plugin.MojoFailureException;
 public class JBossStopMojo extends AbstractJBossMBeanMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        info("Shutting down...");
+        info("Shutting down JBoss");
         new JBossOperations(connect()).shutDown();
     }
 }

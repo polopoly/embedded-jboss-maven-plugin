@@ -45,6 +45,7 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
             return _connection;
         }
 
+        info("Waiting to retrieve JBoss JMX MBean connection... ");
         InitialContext ctx = getInitialContext();
 
         // Try to get JBoss jmx MBean connection

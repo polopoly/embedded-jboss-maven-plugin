@@ -25,9 +25,10 @@ import org.apache.maven.plugin.MojoFailureException;
  * @goal run
  * @aggregator
  */
-public class JBossRunMojo extends JBossDeployMojo
+public class JBossRunMojo extends JBossStartMojo
 {
     public void execute() throws MojoExecutionException, MojoFailureException {
+        logToConsole = true;
         super.execute();
         info("Sleeping");
         try {

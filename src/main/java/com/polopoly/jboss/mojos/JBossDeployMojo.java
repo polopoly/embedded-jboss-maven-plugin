@@ -16,7 +16,7 @@ import java.net.URL;
  * @goal deploy
  * @aggregator
  */
-public class JBossDeployMojo extends JBossStartAndWait {
+public class JBossDeployMojo extends JBossInstallMojo {
 
     /**
      * File to be deployed
@@ -34,16 +34,6 @@ public class JBossDeployMojo extends JBossStartAndWait {
 
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-
-        info("Determining if JBoss needs to be installed");
-        install();
-
-        info("Starting JBoss");
-        start();
-
-        info("Waiting for JBoss to become ready");
-        waitForJBossToStart();
-
         info("Deploying artifacts");
         deployAndWait();
     }

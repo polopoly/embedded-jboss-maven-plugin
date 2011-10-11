@@ -68,18 +68,34 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
 
     /**
      * Force re-installation of jboss
-     *
      * @parameter expression="${jboss.reinstall}"
      */
     protected boolean reinstall;
 
     public void execute() throws MojoExecutionException, MojoFailureException {
-        install();
+        if (!reinstall && isInstalled()) {
+            info("JBoss is already installed?");
+            throw new MojoExecutionException("There is already a directory called " + new File(jbossHome, "bin").getAbsolutePath());
+        }
+        installIfNotAlreadyInstalled();
     }
 
-    protected void install() throws MojoExecutionException, MojoFailureException {
-        info(jbossHome.getAbsolutePath());
-        if (reinstall || !jbossHome.exists()) {
+    /**
+     * Determine if jboss is installed
+     * @return
+     */
+    protected boolean isInstalled() {
+        return new File(jbossHome, "bin").exists();
+    }
+
+    /**
+     * Will install a new jboss if either <code>reinstall</code> is set or there is no jboss at the <code>jbossHome</code> location.
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     */
+    protected void installIfNotAlreadyInstalled() throws MojoExecutionException, MojoFailureException {
+        if (reinstall || !isInstalled()) {
+            info("Installing JBoss");
             try {
                 if (jbossDistributionFile == null) {
                     jbossDistributionFile = resolveArtifact(jbossDistribution).getFile();
