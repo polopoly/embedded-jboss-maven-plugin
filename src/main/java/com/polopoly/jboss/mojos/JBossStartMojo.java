@@ -2,7 +2,6 @@ package com.polopoly.jboss.mojos;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import sun.tools.asm.CatchData;
 
 import java.io.*;
 import java.net.Socket;

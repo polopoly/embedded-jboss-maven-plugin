@@ -1,6 +1,5 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import com.polopoly.jboss.ArtifactData;
 import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.artifact.Artifact;
