@@ -1,6 +1,6 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.AbstractJBossMojo;
+import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import com.polopoly.jboss.ArtifactData;
 import com.polopoly.jboss.JBossDistribution;
 import org.apache.maven.artifact.Artifact;
@@ -17,8 +17,9 @@ import java.util.List;
  * Created by bitter on 2011-10-07
  *
  * @goal install
+ * @aggregator
  */
-public class JBossInstallMojo extends AbstractJBossMojo {
+public class JBossInstallMojo extends AbstractJBossMBeanMojo {
 
     /**
      * The location of JBoss Home.
@@ -72,8 +73,12 @@ public class JBossInstallMojo extends AbstractJBossMojo {
      */
     protected boolean reinstall;
 
-
     public void execute() throws MojoExecutionException, MojoFailureException {
+        install();
+    }
+
+    protected void install() throws MojoExecutionException, MojoFailureException {
+        info(jbossHome.getAbsolutePath());
         if (reinstall || !jbossHome.exists()) {
             try {
                 if (jbossDistributionFile == null) {

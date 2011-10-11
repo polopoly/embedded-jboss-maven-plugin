@@ -1,24 +1,30 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
 /**
  * Created by bitter on 2011-10-07
- * @execute goal="start"
  * @goal start-and-wait
+ * @aggregator
  */
-public class JBossStartAndWait extends AbstractJBossMBeanMojo {
+public class JBossStartAndWait extends JBossStartMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+
+        info("Determining if JBoss needs to be installed");
+        install();
+
+        info("Starting JBoss");
+        start();
+
         info("Waiting for JBoss to become ready");
-        JBossOperations operations = new JBossOperations(connect());
-        waitForJBossToStart(operations);
+        waitForJBossToStart();
     }
 
-    private void waitForJBossToStart(JBossOperations operations) {
+    protected void waitForJBossToStart() throws MojoExecutionException {
+        JBossOperations operations = new JBossOperations(connect());
         for (int i = 0; i < retry; i++) {
             if (operations.isStarted()) {
                 break;
