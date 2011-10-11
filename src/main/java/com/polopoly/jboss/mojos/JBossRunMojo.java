@@ -16,7 +16,6 @@ package com.polopoly.jboss.mojos;
  * limitations under the License.
  */
 
-import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
