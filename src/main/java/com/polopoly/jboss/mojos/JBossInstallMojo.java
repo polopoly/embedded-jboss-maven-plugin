@@ -100,6 +100,8 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
                 if (jbossDistributionFile == null) {
                     jbossDistributionFile = resolveArtifact(jbossDistribution).getFile();
                 }
+                resolveArtifacts(jbossPatches);
+                resolveArtifacts(serverPatches);
 
                 // Install jboss
                 info("Installing '%s' to '%s'", jbossDistributionFile, jbossHome);
