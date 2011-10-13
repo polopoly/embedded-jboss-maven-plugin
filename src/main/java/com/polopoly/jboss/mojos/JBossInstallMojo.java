@@ -111,7 +111,7 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
                 new File(jbossHome, "bin/run.sh").setExecutable(true);
 
             } catch (Exception e) {
-                throw new MojoExecutionException("Unable to download jboss distribution:"  + jbossDistribution, e);
+                throw new MojoExecutionException("Configure Download/Configure JBoss", e);
             }
         }
     }
