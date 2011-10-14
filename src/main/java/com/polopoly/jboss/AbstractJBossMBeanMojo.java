@@ -64,7 +64,7 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
                 info("Waiting to retrieve JBoss JMX MBean connection... ");
             }
             try {
-                Thread.sleep(retryWait);
+                Thread.sleep(retryWait * 1000);
             }
             catch ( InterruptedException e )
             {

@@ -111,7 +111,7 @@ public class JBossStartMojo extends JBossDeployMojo {
                 break;
             }
             try {
-                Thread.sleep(retryWait);
+                Thread.sleep(retryWait * 1000);
             } catch (InterruptedException e) {}
         }
     }

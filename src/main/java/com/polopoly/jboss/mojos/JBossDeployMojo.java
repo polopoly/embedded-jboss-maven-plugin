@@ -67,7 +67,7 @@ public class JBossDeployMojo extends JBossInstallMojo {
         for (int i = 0; i < retry && !operations.isDeployed(url); ++i)
         {
             try {
-                Thread.sleep(retryWait);
+                Thread.sleep(retryWait * 1000);
             }
             catch ( InterruptedException e )
             {
