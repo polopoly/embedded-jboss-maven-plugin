@@ -92,15 +92,14 @@ public class JBossStartMojo extends JBossDeployMojo {
             }
 
             String osName = System.getProperty("os.name");
-            String[] jbossStartCommand = osName.startsWith( "Windows" ) ? createWindowsCommand() : createUnixCommand();
-            String[] jbossStartEnvironment = new String[] { "JBOSS_HOME=" + jbossHome.getAbsolutePath() };
+            ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand() : createUnixCommand());
+            pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
 
             try {
-                Process proc = Runtime.getRuntime().exec(jbossStartCommand, jbossStartEnvironment, new File(jbossHome, "bin"));
+                Process proc = pb.start();
                 new JBossLogger(proc.getInputStream(), "out", logToConsole).start();
                 new JBossLogger(proc.getErrorStream(), "err", logToConsole).start();
-
-            } catch (IOException ioe) {
+            } catch (Exception ioe) {
                 throw new MojoExecutionException("Unable to startIfNamingPortIsFree jboss!", ioe);
             }
         }
@@ -118,12 +117,13 @@ public class JBossStartMojo extends JBossDeployMojo {
     }
 
     private String[] createWindowsCommand() {
-        return
-                new String[] {
-                    "cmd.exe",
-                    "/C",
-                    "cd /D " + jbossHome + "\\bin & set JBOSS_HOME=\"" + jbossHome + "\"&" + STARTUP_COMMAND + ".bat " + startOptions };
+        File jbossWindowsCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".bat");
+        List<String> commandWithOptions = new ArrayList<String>();
+        commandWithOptions.addAll(Arrays.asList("cmd", "/c"));
+        commandWithOptions.add(jbossWindowsCommand.getAbsolutePath());
+        commandWithOptions.addAll(Arrays.asList(startOptions.trim().split("\\s+")));
 
+        return commandWithOptions.toArray(new String[0]);
     }
 
     private String[] createUnixCommand()
