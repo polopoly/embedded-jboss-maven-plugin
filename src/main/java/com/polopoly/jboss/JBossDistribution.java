@@ -6,7 +6,7 @@ package com.polopoly.jboss;
 public class JBossDistribution extends ArtifactData {
 
     public static final JBossDistribution DEFAULT_JBOSS_DISTRIUTION =
-            new JBossDistribution("com.polopoly.jboss", "slim-jboss-4.0.5", "1.2", "zip");
+            new JBossDistribution("com.polopoly.jboss", "slim-jboss-4.0.5", "1.3", "zip");
 
     public JBossDistribution() {
     }
