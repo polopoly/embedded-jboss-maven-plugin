@@ -93,6 +93,7 @@ public class JBossStartMojo extends JBossDeployMojo {
 
             String osName = System.getProperty("os.name");
             ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand() : createUnixCommand());
+            pb.directory(jbossHome);
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
 
             try {
