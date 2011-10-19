@@ -1,5 +1,6 @@
 package com.polopoly.jboss.mojos;
 
+import com.polopoly.jboss.Environment;
 import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -24,6 +25,13 @@ public class JBossStartMojo extends JBossDeployMojo {
      * @parameter default-value="" expression="${jboss.startOptions}"
      */
     protected String startOptions;
+
+    /**
+     * Custom environment variables to pass to the JBoss "run" command.
+     *
+     * @parameter
+     */
+    protected Environment[] environments;
 
     /**
      * Pipes stdout and stderr from the jboss process to the maven console.
@@ -97,6 +105,11 @@ public class JBossStartMojo extends JBossDeployMojo {
             ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand(startOpts) : createUnixCommand(startOpts));
             pb.directory(jbossHome);
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
+            if (environments != null) {
+                for (Environment env : environments) {
+                    pb.environment().put(env.getName(), env.getValue());
+                }
+            }
 
             try {
                 Process proc = pb.start();
