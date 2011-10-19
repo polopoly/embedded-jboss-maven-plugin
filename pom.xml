@@ -3,7 +3,7 @@
 
   <groupId>com.polopoly.jboss</groupId>
   <artifactId>embedded-jboss-maven-plugin</artifactId>
-  <version>1.7</version>
+  <version>1.8-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Embedded JBoss Maven Plugin</name>
