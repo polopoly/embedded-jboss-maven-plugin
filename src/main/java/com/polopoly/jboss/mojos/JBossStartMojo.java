@@ -84,15 +84,17 @@ public class JBossStartMojo extends JBossDeployMojo {
     {
         if (!isNamingPortFree()) {
             info("Starting JBoss");
-            if (startOptions == null) {
-                startOptions = "";
+            List<String> startOpts = new ArrayList<String>();
+            if (startOptions != null) {
+                startOpts.addAll(Arrays.asList(startOptions.split("\\s+")));
             }
             if (serverId != null) {
-                startOptions += " -c " + serverId;
+                startOpts.add("-c");
+                startOpts.add(serverId);
             }
 
             String osName = System.getProperty("os.name");
-            ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand() : createUnixCommand());
+            ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand(startOpts) : createUnixCommand(startOpts));
             pb.directory(jbossHome);
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
 
@@ -117,22 +119,22 @@ public class JBossStartMojo extends JBossDeployMojo {
         }
     }
 
-    private String[] createWindowsCommand() {
+    private String[] createWindowsCommand(List<String> startOpts) {
         File jbossWindowsCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".bat");
         List<String> commandWithOptions = new ArrayList<String>();
         commandWithOptions.addAll(Arrays.asList("cmd", "/c"));
         commandWithOptions.add(jbossWindowsCommand.getAbsolutePath());
-        commandWithOptions.addAll(Arrays.asList(startOptions.trim().split("\\s+")));
+        commandWithOptions.addAll(startOpts);
 
         return commandWithOptions.toArray(new String[0]);
     }
 
-    private String[] createUnixCommand()
+    private String[] createUnixCommand(List<String> startOpts)
     {
         File jbossUnixCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".sh");
         List<String> commandWithOptions = new ArrayList<String>();
         commandWithOptions.add(jbossUnixCommand.getAbsolutePath());
-        commandWithOptions.addAll(Arrays.asList(startOptions.trim().split("\\s+")));
+        commandWithOptions.addAll(startOpts);
 
         return commandWithOptions.toArray(new String[commandWithOptions.size()]);
     }
