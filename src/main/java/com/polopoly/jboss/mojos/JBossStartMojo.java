@@ -107,7 +107,11 @@ public class JBossStartMojo extends JBossDeployMojo {
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
             if (environments != null) {
                 for (Environment env : environments) {
-                    pb.environment().put(env.getName(), env.getValue());
+                    if (env.getName() != null && env.getName().length() > 0 &&
+                        env.getValue() != null && env.getValue().length() > 0)
+                    {
+                        pb.environment().put(env.getName(), env.getValue());
+                    }
                 }
             }
 
