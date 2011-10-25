@@ -9,7 +9,7 @@ public class ArtifactData {
     public String artifactId;
     public String version;
     public String classifier;
-    public String type;
+    public String type = "jar";
 
     @Override
     public String toString() {

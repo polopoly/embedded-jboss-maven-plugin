@@ -143,5 +143,4 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
     protected void warn(String format, Object... args) {
         getLog().warn(String.format("[JBOSS] " + format, args));
     }
-
 }

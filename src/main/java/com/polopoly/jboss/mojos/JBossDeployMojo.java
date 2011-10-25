@@ -66,13 +66,7 @@ public class JBossDeployMojo extends JBossInstallMojo {
         info("Waiting for: " + url);
         for (int i = 0; i < retry && !operations.isDeployed(url); ++i)
         {
-            try {
-                Thread.sleep(retryWait * 1000);
-            }
-            catch ( InterruptedException e )
-            {
-                warn("Thread interrupted while waiting for deplyment: " + e.getMessage());
-            }
+            sleep("Thread interrupted while waiting for deplyment");
         }
     }
 

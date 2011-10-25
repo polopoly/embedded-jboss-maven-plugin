@@ -8,6 +8,8 @@ import javax.management.MBeanServerConnection;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.Properties;
 
 /**
@@ -63,13 +65,7 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
                 ne = e;
                 info("Waiting to retrieve JBoss JMX MBean connection... ");
             }
-            try {
-                Thread.sleep(retryWait * 1000);
-            }
-            catch ( InterruptedException e )
-            {
-                warn("Thread interrupted while waiting for MBean connection: " + e.getMessage());
-            }
+            sleep("Thread interrupted while waiting for MBean connection");
         }
 
         if ( server == null )
@@ -80,6 +76,18 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
         return server;
     }
 
+    /**
+     * Determine whether <code>namingPort</code> is free.
+     * @return
+     */
+    protected boolean isNamingPortFree() {
+        try {
+            new Socket("127.0.0.1", new Integer(namingPort));
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
+    }
 
     /**
      * Set up the context information for connecting the the jboss server.
@@ -109,6 +117,16 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
         catch ( NamingException e )
         {
             throw new MojoExecutionException( "Unable to instantiate naming context: " + e.getMessage(), e );
+        }
+    }
+
+    protected void sleep(String interruptedMessage) {
+        try {
+            Thread.sleep(retryWait * 1000);
+        }
+        catch ( InterruptedException e )
+        {
+            warn(interruptedMessage + "\n" + e.getMessage());
         }
     }
 }

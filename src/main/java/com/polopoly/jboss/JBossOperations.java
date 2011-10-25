@@ -6,6 +6,7 @@ import javax.management.MBeanException;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+import javax.management.OperationsException;
 import java.net.URL;
 
 /**
@@ -45,6 +46,8 @@ public class JBossOperations {
     private Object getAttribute(ObjectName name, String attribute) {
         try {
             return _server.getAttribute(name, attribute);
+        } catch (OperationsException oe) {
+            return null;
         } catch (Exception e) {
             throw new RuntimeException("Unable to retrieve mbean attribute '" + name + "'.'" + attribute + "'");
         }

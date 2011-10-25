@@ -6,7 +6,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
 import java.io.*;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -70,19 +69,6 @@ public class JBossStartMojo extends JBossDeployMojo {
 
 
     /**
-     * Determine whether <code>namingPort</code> is free.
-     * @return
-     */
-    protected boolean isNamingPortFree() {
-        try {
-            new Socket("127.0.0.1", new Integer(namingPort));
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Start JBoss If <code>namingPort</code> is free.
      *
      * @throws MojoExecutionException
@@ -130,9 +116,7 @@ public class JBossStartMojo extends JBossDeployMojo {
             if (operations.isStarted()) {
                 break;
             }
-            try {
-                Thread.sleep(retryWait * 1000);
-            } catch (InterruptedException e) {}
+            sleep("Interrupted while waiting for JBoss to start");
         }
     }
 
