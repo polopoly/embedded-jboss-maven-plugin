@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.polopoly.jboss</groupId>
-  <artifactId>embedded-jboss-maven-plugin</artifactId>
+  <artifactId>jboss-maven-plugin</artifactId>
   <version>1.9-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
