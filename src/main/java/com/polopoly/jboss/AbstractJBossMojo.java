@@ -137,10 +137,12 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
     }
     
     protected void info(String format, Object... args) {
-        getLog().info(String.format("[JBOSS] " + format, args));
+        String message = args.length == 0 ? "[JBOSS] " + format : String.format("[JBOSS] " + format, args);
+        getLog().info(message);
     }
 
     protected void warn(String format, Object... args) {
-        getLog().warn(String.format("[JBOSS] " + format, args));
+        String message = args.length == 0 ? "[JBOSS] " + format : String.format("[JBOSS] " + format, args);
+        getLog().warn(message);
     }
 }
