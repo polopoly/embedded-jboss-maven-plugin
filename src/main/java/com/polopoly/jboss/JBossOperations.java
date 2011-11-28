@@ -91,6 +91,12 @@ public class JBossOperations {
 
                     LOG.log(Level.INFO, String.format("Does file '%s' exist according to java.io.File: %b", newPath, newFile.exists()));
                 }
+
+                // check lowercase as well...
+                String lowerCasePath = path.toLowerCase();
+                File lowerCaseFile = new File(new URL(lowerCasePath).getFile());
+
+                LOG.log(Level.INFO, String.format("Does file '%s' exist according to java.io.File: %b", lowerCasePath, lowerCaseFile.exists()));
             } else {
                 LOG.log(Level.INFO, "URL is not a file url...");
             }
