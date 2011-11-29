@@ -112,7 +112,7 @@ public class JBossOperations {
     // -----------------------------------------------------------
     // MBean manipulators
     // -----------------------------------------------------------
-    private Object getAttribute(String name, String attribute) {
+    public Object getAttribute(String name, String attribute) {
         return getAttribute(objectName(name), attribute);
     }
 
@@ -126,11 +126,11 @@ public class JBossOperations {
         }
     }
 
-    private Object invoke(String name, String operation) throws MojoExecutionException {
+    public Object invoke(String name, String operation) throws MojoExecutionException {
         return invoke(objectName(name), operation, null, null);
     }
 
-    private Object invoke(String name, String operation, Object value) throws MojoExecutionException {
+    public Object invoke(String name, String operation, Object value) throws MojoExecutionException {
         return invoke(objectName(name), operation, new Object[]{value}, new String[]{value.getClass().getName()});
     }
 
