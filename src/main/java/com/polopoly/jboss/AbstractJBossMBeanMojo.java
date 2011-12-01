@@ -2,7 +2,6 @@ package com.polopoly.jboss;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Enumeration;
 import java.util.Properties;
 
 import javax.management.MBeanServerConnection;
@@ -106,6 +105,8 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
         env.put(Context.INITIAL_CONTEXT_FACTORY, "org.jnp.interfaces.NamingContextFactory");
         env.put(Context.URL_PKG_PREFIXES, "org.jboss.naming:org.jnp.interfaces");
         env.put(Context.PROVIDER_URL, "127.0.0.1:" + namingPort);
+        
+        getLog().info("Disabling JNP AUTO DISCOVERY...");
 
         // never auto-discover
         env.put(NamingContext.JNP_DISABLE_DISCOVERY, true);
