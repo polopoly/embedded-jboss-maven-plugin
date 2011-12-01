@@ -109,7 +109,7 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
         getLog().info("Disabling JNP AUTO DISCOVERY...");
 
         // never auto-discover
-        env.put(NamingContext.JNP_DISABLE_DISCOVERY, true);
+        env.put(NamingContext.JNP_DISABLE_DISCOVERY, "true");
 
         String username = getUsername();
         if ( username != null )
