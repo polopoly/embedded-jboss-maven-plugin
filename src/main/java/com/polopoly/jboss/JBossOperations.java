@@ -1,18 +1,13 @@
 package com.polopoly.jboss;
 
-import java.io.File;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.maven.plugin.MojoExecutionException;
 
 import javax.management.MBeanException;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.OperationsException;
-
-import org.apache.maven.plugin.MojoExecutionException;
+import java.net.URL;
 
 /**
  * Created by bitter on 2011-10-07
@@ -20,8 +15,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 public class JBossOperations {
 
     private MBeanServerConnection _server;
-
-    private Logger LOG = Logger.getLogger(getClass().getName());
 
     public JBossOperations(MBeanServerConnection server) {
         _server = server;
@@ -36,67 +29,7 @@ public class JBossOperations {
     }
 
     public void redeploy(URL url) throws MojoExecutionException {
-        LOG.log(Level.INFO, "*****");
-        LOG.log(Level.INFO, "Starting JBoss debugging information");
-        LOG.log(Level.INFO, "*****");
-
-        try {
-            checkFileExists(url);
-            tryReadingFile(url);
-
-            invoke("jboss.system:service=MainDeployer", "redeploy", url);
-        } finally {
-            LOG.log(Level.INFO, "*****");
-            LOG.log(Level.INFO, "Ending JBoss debugging information");
-            LOG.log(Level.INFO, "*****");
-        }
-    }
-
-    private void tryReadingFile(final URL url)
-    {
-        try {
-            url.openStream().close();
-
-            LOG.log(Level.INFO, "Successfully read and closed stream for given url (1)...");
-        } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error while reading file (1)", e);
-        }
-
-        try {
-            InputStream stream = url.openStream();
-            stream.close();
-
-            LOG.log(Level.INFO, "Successfully read and closed stream for given url (2)...");
-        } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error while reading file (2)", e);
-        }
-    }
-
-    private void checkFileExists(final URL url)
-    {
-        try {
-            if (url.getProtocol().startsWith("file")) {
-                File urlFile = new File(url.getFile());
-                String path = url.toExternalForm();
-
-                LOG.log(Level.INFO, String.format("File is '%s'", urlFile.getAbsoluteFile().getAbsolutePath()));
-                LOG.log(Level.INFO, String.format("File external form is '%s'", path));
-
-                LOG.log(Level.INFO, String.format("Does file exist according to java.io.File: %b", urlFile.exists()));
-
-                // check if the problem is only one '/'...
-                if (!path.startsWith("file://")) {
-                    String newPath = path.replace("file:/", "file://");
-                    File newFile = new File(new URL(newPath).getFile());
-
-                    LOG.log(Level.INFO, String.format("Does file '%s' exist according to java.io.File: %b", newPath, newFile.exists()));
-                }
-            } else {
-                LOG.log(Level.INFO, "URL is not a file url...");
-            }
-        } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error while checking file existance", e);
-        }
+        invoke("jboss.system:service=MainDeployer", "redeploy", url);
     }
 
     public void shutDown() throws MojoExecutionException {
@@ -121,7 +54,7 @@ public class JBossOperations {
     }
 
     private Object invoke(String name, String operation) throws MojoExecutionException {
-        return invoke(objectName(name), operation, null, null);
+        return invoke(objectName(name), operation, null, null); 
     }
 
     private Object invoke(String name, String operation, Object value) throws MojoExecutionException {
