@@ -1,20 +1,16 @@
 package com.polopoly.jboss.mojos;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
+import com.polopoly.jboss.Environment;
+import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
+import org.jboss.logging.Logger;
 
-import com.polopoly.jboss.Environment;
-import com.polopoly.jboss.JBossOperations;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -40,7 +36,7 @@ public class JBossStartMojo extends JBossDeployMojo {
 
     /**
      * Pipes stdout and stderr from the jboss process to the maven console.
-     *
+     * 
      * @parameter expression="${jboss.logToConsole}"
      */
     protected boolean logToConsole;
@@ -115,75 +111,22 @@ public class JBossStartMojo extends JBossDeployMojo {
         }
 
         Log LOG = getLog();
-
+        
         LOG.info("Going to wait for JBoss to get ready... (going to statically retry for 10 seconds)");
-
+        
         // Wait for jboss to become ready
         JBossOperations operations = new JBossOperations(connect());
-
-        printDebugInformation(operations);
-
         for (int i = 0; i < retry; i++) {
             LOG.info("Waiting for JBoss to report started...");
             LOG.info("jboss.system:type=Server, Started = " + operations.isStarted());
-
+            
 //            if (operations.isStarted()) {
 //                break;
 //            }
-
+            
             LOG.info("Sleeping for " + (retryWait * 1000) + "...");
-
+            
             sleep("Interrupted while waiting for JBoss to start");
-        }
-    }
-
-    private void printDebugInformation(final JBossOperations operations)
-    {
-        getAndPrintAttribute(operations, "jboss.system:type=ServerInfo", "OSArch");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerInfo", "HostAddress");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerInfo", "OSName");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerInfo", "HostName");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerInfo", "JavaVMVersion");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerInfo", "JavaVendor");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerInfo", "JavaVersion");
-
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerDataDir");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerLogDir");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "HomeURL");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerConfigURL");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerNativeDir");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerTempDir");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerName");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerHomeURL");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerHomeDir");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerLibraryURL");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerBaseDir");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "ServerBaseURL");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "LibraryURL");
-        getAndPrintAttribute(operations, "jboss.system:type=ServerConfig", "HomeDir");
-
-        getAndPrintAttribute(operations, "jboss.system:type=MainDeployer", "TempDir");
-        getAndPrintAttribute(operations, "jboss.system:type=MainDeployer", "TempDirString");
-        getAndPrintAttribute(operations, "jboss.system:type=MainDeployer", "State");
-        getAndPrintAttribute(operations, "jboss.system:type=MainDeployer", "StateString");
-
-        try {
-            Object invoke = operations.invoke("JMImplementation:name=Default,service=LoaderRepository", "displayClassInfo", "org.jboss.deployment.DeploymentInfo");
-            getLog().info("Result from displayClassInfo: " + invoke);
-        } catch (Exception e) {
-            getLog().warn("Error while invoking displayClassInfo", e);
-        }
-    }
-
-    private void getAndPrintAttribute(final JBossOperations operations,
-                                      final String beanName,
-                                      final String attributeName)
-    {
-        try {
-            Object value = operations.getAttribute(beanName, attributeName);
-            getLog().info(beanName + ", " + attributeName + " = " + value);
-        } catch (Exception e) {
-            getLog().warn("Could not print debug information for " + beanName + ", " + attributeName, e);
         }
     }
 
