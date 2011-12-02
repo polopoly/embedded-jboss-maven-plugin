@@ -4,8 +4,6 @@ import com.polopoly.jboss.Environment;
 import com.polopoly.jboss.JBossOperations;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
-import org.jboss.logging.Logger;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -58,6 +56,7 @@ public class JBossStartMojo extends JBossDeployMojo {
             throw new MojoExecutionException("There is already a process occupying port " + namingPort);
         }
 
+
         // Do installation (if not installed)
         installIfNotAlreadyInstalled();
 
@@ -67,6 +66,7 @@ public class JBossStartMojo extends JBossDeployMojo {
         // Deploy artifacts
         deployAndWait();
     }
+
 
     /**
      * Start JBoss If <code>namingPort</code> is free.
@@ -110,22 +110,12 @@ public class JBossStartMojo extends JBossDeployMojo {
             }
         }
 
-        Log LOG = getLog();
-        
-        LOG.info("Going to wait for JBoss to get ready... (going to statically retry for 10 seconds)");
-        
         // Wait for jboss to become ready
         JBossOperations operations = new JBossOperations(connect());
         for (int i = 0; i < retry; i++) {
-            LOG.info("Waiting for JBoss to report started...");
-            LOG.info("jboss.system:type=Server, Started = " + operations.isStarted());
-            
-//            if (operations.isStarted()) {
-//                break;
-//            }
-            
-            LOG.info("Sleeping for " + (retryWait * 1000) + "...");
-            
+            if (operations.isStarted()) {
+                break;
+            }
             sleep("Interrupted while waiting for JBoss to start");
         }
     }
