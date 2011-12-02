@@ -1,19 +1,16 @@
 package com.polopoly.jboss;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.util.Enumeration;
-import java.util.Properties;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.jboss.security.SecurityAssociation;
+import org.jboss.security.SimplePrincipal;
 
 import javax.management.MBeanServerConnection;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
-import org.apache.maven.plugin.MojoExecutionException;
-import org.jboss.security.SecurityAssociation;
-import org.jboss.security.SimplePrincipal;
-import org.jnp.interfaces.NamingContext;
+import java.io.IOException;
+import java.net.Socket;
+import java.util.Properties;
 
 /**
  * Created by bitter on 2011-10-07
@@ -102,13 +99,9 @@ public abstract class AbstractJBossMBeanMojo extends AbstractJBossMojo {
         throws MojoExecutionException
     {
         Properties env = new Properties();
-
-        env.put(Context.INITIAL_CONTEXT_FACTORY, "org.jnp.interfaces.NamingContextFactory");
-        env.put(Context.URL_PKG_PREFIXES, "org.jboss.naming:org.jnp.interfaces");
-        env.put(Context.PROVIDER_URL, "127.0.0.1:" + namingPort);
-
-        // never auto-discover
-        env.put(NamingContext.JNP_DISABLE_DISCOVERY, true);
+        env.put( Context.INITIAL_CONTEXT_FACTORY, "org.jnp.interfaces.NamingContextFactory" );
+        env.put( Context.URL_PKG_PREFIXES, "org.jboss.naming:org.jnp.interfaces" );
+        env.put( Context.PROVIDER_URL, "127.0.0.1:" + namingPort );
 
         String username = getUsername();
         if ( username != null )

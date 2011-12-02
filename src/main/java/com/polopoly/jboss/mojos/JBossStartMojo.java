@@ -22,9 +22,8 @@ import com.polopoly.jboss.JBossOperations;
  * @goal start
  * @aggregator
  */
-public class JBossStartMojo
-    extends JBossDeployMojo
-{
+public class JBossStartMojo extends JBossDeployMojo {
+
     /**
      * The set of options to pass to the JBoss "run" command.
      *
@@ -57,9 +56,7 @@ public class JBossStartMojo
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
-    public void execute()
-        throws MojoExecutionException, MojoFailureException
-    {
+    public void execute() throws MojoExecutionException, MojoFailureException {
         if (isNamingPortFree()) {
             info("JBoss is already running?");
             throw new MojoExecutionException("There is already a process occupying port " + namingPort);
@@ -192,7 +189,6 @@ public class JBossStartMojo
 
     private String[] createWindowsCommand(List<String> startOpts) {
         File jbossWindowsCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".bat");
-
         List<String> commandWithOptions = new ArrayList<String>();
         commandWithOptions.addAll(Arrays.asList("cmd", "/c"));
         commandWithOptions.add(jbossWindowsCommand.getAbsolutePath());
@@ -204,7 +200,6 @@ public class JBossStartMojo
     private String[] createUnixCommand(List<String> startOpts)
     {
         File jbossUnixCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".sh");
-
         List<String> commandWithOptions = new ArrayList<String>();
         commandWithOptions.add(jbossUnixCommand.getAbsolutePath());
         commandWithOptions.addAll(startOpts);
@@ -212,25 +207,21 @@ public class JBossStartMojo
         return commandWithOptions.toArray(new String[commandWithOptions.size()]);
     }
 
-    private class JBossLogger
-        extends Thread
-    {
-        private final BufferedReader _stream;
+    private class JBossLogger extends Thread {
 
+        private final BufferedReader _stream;
         private final String _logName;
         private final boolean _log;
 
-        JBossLogger(InputStream stream, String logName, boolean log)
-        {
+        JBossLogger(InputStream stream, String logName, boolean log) {
             _stream = new BufferedReader(new InputStreamReader(stream));
             _logName = logName;
             _log = log;
         }
 
-        public void run()
-        {
-            String line;
+        public void run() {
 
+            String line;
             try {
                 while ((line = _stream.readLine()) != null) {
                     if (_log) {
