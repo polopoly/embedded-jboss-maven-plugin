@@ -51,13 +51,6 @@ public class JBossStartMojo
     public static final String STARTUP_COMMAND = "run";
 
     /**
-     * The host that JBoss will bind to.
-     *
-     * @parameter default-value="localhost" expression="${jboss.host}"
-     */
-    protected String jbossHost;
-
-    /**
      * Will install a JBoss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
      *
      * @throws MojoExecutionException
@@ -103,10 +96,8 @@ public class JBossStartMojo
                 startOpts.add(serverId);
             }
 
-            if (jbossHost != null) {
-                startOpts.add("-b");
-                startOpts.add(jbossHost);
-            }
+            startOpts.add("-b");
+            startOpts.add("localhost");
 
             String osName = System.getProperty("os.name");
 
