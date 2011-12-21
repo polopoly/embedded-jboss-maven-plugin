@@ -1,23 +1,29 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.Environment;
-import com.polopoly.jboss.JBossOperations;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+
+import com.polopoly.jboss.Environment;
+import com.polopoly.jboss.JBossOperations;
+
 /**
+ * This mojo will install a JBoss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
  *
- * This goal will installI a jboss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
  * @goal start
  * @aggregator
  */
-public class JBossStartMojo extends JBossDeployMojo {
-
+public class JBossStartMojo
+    extends JBossDeployMojo
+{
     /**
      * The set of options to pass to the JBoss "run" command.
      *
@@ -34,7 +40,7 @@ public class JBossStartMojo extends JBossDeployMojo {
 
     /**
      * Pipes stdout and stderr from the jboss process to the maven console.
-     * 
+     *
      * @parameter expression="${jboss.logToConsole}"
      */
     protected boolean logToConsole;
@@ -45,17 +51,18 @@ public class JBossStartMojo extends JBossDeployMojo {
     public static final String STARTUP_COMMAND = "run";
 
     /**
-     * This goal will installI a jboss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
+     * Will install a JBoss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
      *
      * @throws MojoExecutionException
      * @throws MojoFailureException
      */
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute()
+        throws MojoExecutionException, MojoFailureException
+    {
         if (isNamingPortFree()) {
             info("JBoss is already running?");
             throw new MojoExecutionException("There is already a process occupying port " + namingPort);
         }
-
 
         // Do installation (if not installed)
         installIfNotAlreadyInstalled();
@@ -67,7 +74,6 @@ public class JBossStartMojo extends JBossDeployMojo {
         deployAndWait();
     }
 
-
     /**
      * Start JBoss If <code>namingPort</code> is free.
      *
@@ -78,19 +84,28 @@ public class JBossStartMojo extends JBossDeployMojo {
     {
         if (!isNamingPortFree()) {
             info("Starting JBoss");
+
             List<String> startOpts = new ArrayList<String>();
+
             if (startOptions != null) {
                 startOpts.addAll(Arrays.asList(startOptions.split("\\s+")));
             }
+
             if (serverId != null) {
                 startOpts.add("-c");
                 startOpts.add(serverId);
             }
 
+            startOpts.add("-b");
+            startOpts.add("localhost");
+
             String osName = System.getProperty("os.name");
+
             ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand(startOpts) : createUnixCommand(startOpts));
+
             pb.directory(jbossHome);
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
+
             if (environments != null) {
                 for (Environment env : environments) {
                     if (env.getName() != null && env.getName().length() > 0 &&
@@ -116,13 +131,17 @@ public class JBossStartMojo extends JBossDeployMojo {
             if (operations.isStarted()) {
                 break;
             }
+
             sleep("Interrupted while waiting for JBoss to start");
         }
     }
 
-    private String[] createWindowsCommand(List<String> startOpts) {
+    private String[] createWindowsCommand(final List<String> startOpts)
+    {
         File jbossWindowsCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".bat");
+
         List<String> commandWithOptions = new ArrayList<String>();
+
         commandWithOptions.addAll(Arrays.asList("cmd", "/c"));
         commandWithOptions.add(jbossWindowsCommand.getAbsolutePath());
         commandWithOptions.addAll(startOpts);
@@ -130,38 +149,46 @@ public class JBossStartMojo extends JBossDeployMojo {
         return commandWithOptions.toArray(new String[0]);
     }
 
-    private String[] createUnixCommand(List<String> startOpts)
+    private String[] createUnixCommand(final List<String> startOpts)
     {
         File jbossUnixCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".sh");
+
         List<String> commandWithOptions = new ArrayList<String>();
+
         commandWithOptions.add(jbossUnixCommand.getAbsolutePath());
         commandWithOptions.addAll(startOpts);
 
         return commandWithOptions.toArray(new String[commandWithOptions.size()]);
     }
 
-    private class JBossLogger extends Thread {
-
+    private class JBossLogger
+        extends Thread
+    {
         private final BufferedReader _stream;
+
         private final String _logName;
         private final boolean _log;
 
-        JBossLogger(InputStream stream, String logName, boolean log) {
+        JBossLogger(final InputStream stream,
+                    final String logName,
+                    final boolean log)
+        {
             _stream = new BufferedReader(new InputStreamReader(stream));
+
             _logName = logName;
             _log = log;
         }
 
-        public void run() {
-
+        public void run()
+        {
             String line;
+
             try {
                 while ((line = _stream.readLine()) != null) {
                     if (_log) {
                       info(" -- log(%s) -- %s", _logName, line);
                     }
                 }
-
             } catch (IOException ioe) {}
         }
     }
