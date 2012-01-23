@@ -23,7 +23,7 @@ public abstract class AbstractJBossMBeanMojo
     /**
      * Maximum number of retries to get JBoss JMX MBean connection.
      *
-     * @parameter default-value="10" expression="${jboss.retry}"
+     * @parameter default-value="60" expression="${jboss.retry}"
      */
     protected int retry;
 
