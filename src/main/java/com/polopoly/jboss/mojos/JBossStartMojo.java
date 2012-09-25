@@ -103,7 +103,7 @@ public class JBossStartMojo
 
             ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand(startOpts) : createUnixCommand(startOpts));
 
-            pb.directory(jbossHome);
+            pb.directory(new File(jbossHome, "bin"));
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
 
             if (environments != null) {
@@ -138,12 +138,11 @@ public class JBossStartMojo
 
     private String[] createWindowsCommand(final List<String> startOpts)
     {
-        File jbossWindowsCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".bat");
-
+        String jbossWindowsCommand = STARTUP_COMMAND + ".bat";
         List<String> commandWithOptions = new ArrayList<String>();
 
         commandWithOptions.addAll(Arrays.asList("cmd", "/c"));
-        commandWithOptions.add(jbossWindowsCommand.getAbsolutePath());
+        commandWithOptions.add(jbossWindowsCommand);
         commandWithOptions.addAll(startOpts);
 
         return commandWithOptions.toArray(new String[0]);
@@ -151,11 +150,10 @@ public class JBossStartMojo
 
     private String[] createUnixCommand(final List<String> startOpts)
     {
-        File jbossUnixCommand = new File(new File(jbossHome, "bin"), STARTUP_COMMAND + ".sh");
-
+        String jbossUnixCommand = "./" + STARTUP_COMMAND + ".sh";
         List<String> commandWithOptions = new ArrayList<String>();
 
-        commandWithOptions.add(jbossUnixCommand.getAbsolutePath());
+        commandWithOptions.add(jbossUnixCommand);
         commandWithOptions.addAll(startOpts);
 
         return commandWithOptions.toArray(new String[commandWithOptions.size()]);
