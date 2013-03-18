@@ -35,6 +35,8 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
      * The local repository where the artifacts are located.
      *
      * @parameter expression="${localRepository}"
+     * @required
+     * @readonly
      */
     private ArtifactRepository localRepository;
     

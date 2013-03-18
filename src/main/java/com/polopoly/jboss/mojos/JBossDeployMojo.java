@@ -11,7 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
- * Created by bitter on 2011-10-07
+ * Will deploy files into a running JBoss instance
  *
  * @goal deploy
  * @aggregator
@@ -26,7 +26,7 @@ public class JBossDeployMojo extends JBossInstallMojo {
     protected File file;
 
     /**
-     * Artifacts to be deployed
+     * Artifacts to be deployed (in the form of array of artifact coordinates)
      * 
      * @parameter
      */

@@ -20,7 +20,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
 /**
- * Goal which touches a timestamp file.
+ * Same as jboss:start but will run in a foreground process logging to the console.
  *
  * @goal run
  * @aggregator
