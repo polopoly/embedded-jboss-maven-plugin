@@ -14,9 +14,6 @@ import org.jboss.security.SecurityAssociation;
 import org.jboss.security.SimplePrincipal;
 import org.jnp.interfaces.NamingContext;
 
-/**
- * Created by bitter on 2011-10-07
- */
 public abstract class AbstractJBossMBeanMojo
     extends AbstractJBossMojo
 {

@@ -1,8 +1,5 @@
 package com.polopoly.jboss;
 
-/**
- * Created by bitter on 2011-10-06
- */
 public class JBossDistribution extends ArtifactData {
 
     public static final JBossDistribution DEFAULT_JBOSS_DISTRIUTION =
