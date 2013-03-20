@@ -1,8 +1,5 @@
 package com.polopoly.jboss;
 
-/**
- * Created by bitter on 2011-10-07
- */
 public class ArtifactData {
 
     public String groupId;

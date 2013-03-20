@@ -10,9 +10,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.wagon.authentication.AuthenticationInfo;
 
-/**
- * Created by bitter on 2011-10-08
- */
 public abstract class AbstractJBossMojo extends AbstractMojo {
 
     /**
@@ -35,6 +32,8 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
      * The local repository where the artifacts are located.
      *
      * @parameter expression="${localRepository}"
+     * @required
+     * @readonly
      */
     private ArtifactRepository localRepository;
     

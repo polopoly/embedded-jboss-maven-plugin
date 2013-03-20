@@ -16,7 +16,8 @@ import com.polopoly.jboss.Environment;
 import com.polopoly.jboss.JBossOperations;
 
 /**
- * This mojo will install a JBoss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
+ * Will download, install, and start a pre-configured JBoss Application Server on localhost and deploy all listed deployments.
+ * If the installation directory already exists it will only be started.
  *
  * @goal start
  * @aggregator
@@ -39,9 +40,9 @@ public class JBossStartMojo
     protected Environment[] environments;
 
     /**
-     * Pipes stdout and stderr from the jboss process to the maven console.
+     * If true, pipes stdout and stderr from the jboss process to the maven console.
      *
-     * @parameter expression="${jboss.logToConsole}"
+     * @parameter default-value="false" expression="${jboss.logToConsole}"
      */
     protected boolean logToConsole;
 

@@ -6,7 +6,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
 /**
- * Created by bitter on 2011-10-07
+ * Will stop the JBoss server started with jboss:start
  * @goal stop
  * @aggregator
  */

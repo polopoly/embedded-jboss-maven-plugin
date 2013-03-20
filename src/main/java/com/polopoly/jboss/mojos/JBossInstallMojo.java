@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by bitter on 2011-10-07
+ * Will download and install a pre-configured JBoss Application Server
  *
  * @goal install
  * @aggregator
@@ -30,13 +30,13 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
     protected File jbossHome;
 
     /**
-     * The jboss distribution.
+     * The jboss distribution (in the form of artifact coordinates).
      * @parameter
      */
     protected JBossDistribution jbossDistribution = JBossDistribution.DEFAULT_JBOSS_DISTRIUTION;
 
     /**
-     * The jboss distribution. If specified the takes precedence over jbossDistribution.
+     * The jboss distribution (in the form of path to file). If specified takes precedence over jbossDistribution.
      * @parameter
      */
     protected File jbossDistributionFile;
@@ -55,20 +55,20 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
 
 
     /**
-     * Patch artifacts that will be applied to the supplied server id
+     * Patch artifacts that will be applied to the jboss distribution
      * @parameter
      */
     protected ArtifactData[] jbossPatches = new ArtifactData[0];
 
     /**
-     * Patch files that will be applied to the supplied server id
+     * Patch files that will be applied to the jboss distribution
      * @parameter
      */
     protected File[] jbossPatchFiles = new File[0];
 
     /**
      * Force re-installation of jboss
-     * @parameter expression="${jboss.reinstall}"
+     * @parameter default-value="false" expression="${jboss.reinstall}"
      */
     protected boolean reinstall;
 

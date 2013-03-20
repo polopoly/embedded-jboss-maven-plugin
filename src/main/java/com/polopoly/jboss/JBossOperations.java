@@ -9,9 +9,6 @@ import javax.management.ObjectName;
 import javax.management.OperationsException;
 import java.net.URL;
 
-/**
- * Created by bitter on 2011-10-07
- */
 public class JBossOperations {
 
     private MBeanServerConnection _server;
