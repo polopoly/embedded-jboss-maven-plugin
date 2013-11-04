@@ -31,6 +31,14 @@
     </repository>
   </distributionManagement>
 
+  <repositories>
+    <repository>
+      <id>polopoly-public</id>
+      <url>http://maven.polopoly.com/nexus/content/groups/polopoly-public</url>
+      <snapshots><enabled>false</enabled></snapshots>
+    </repository>
+  </repositories>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
