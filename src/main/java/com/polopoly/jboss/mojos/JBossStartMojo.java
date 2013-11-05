@@ -98,7 +98,7 @@ public class JBossStartMojo
             }
 
             startOpts.add("-b");
-            startOpts.add("localhost");
+            startOpts.add(bindAddress);
 
             String osName = System.getProperty("os.name");
 

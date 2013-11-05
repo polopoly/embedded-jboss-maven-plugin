@@ -38,6 +38,13 @@ public abstract class AbstractJBossMBeanMojo
      */
     protected String namingPort;
 
+    /**
+     * The ip to bind to. Defaults to localhost, but can be changed when needed,
+     * for example use -Djboss.bindAddress=0.0.0.0 to bind to all interfaces.
+     * @parameter default-value="localhost" expression="${jboss.bindAddress}"
+     */
+    protected String bindAddress;
+
     private volatile MBeanServerConnection _connection;
 
     public MBeanServerConnection connect()
@@ -83,12 +90,19 @@ public abstract class AbstractJBossMBeanMojo
     protected boolean isNamingPortFree()
     {
         try {
-            new Socket("127.0.0.1", new Integer(namingPort));
+            new Socket(getAddress(), new Integer(namingPort));
         } catch (IOException e) {
             return false;
         }
 
         return true;
+    }
+
+    private String getAddress() {
+        if ("0.0.0.0".equals(bindAddress)) {
+            return "localhost";
+        }
+        return bindAddress;
     }
 
     /**
@@ -104,7 +118,7 @@ public abstract class AbstractJBossMBeanMojo
 
         env.put(Context.INITIAL_CONTEXT_FACTORY, "org.jnp.interfaces.NamingContextFactory");
         env.put(Context.URL_PKG_PREFIXES, "org.jboss.naming:org.jnp.interfaces");
-        env.put(Context.PROVIDER_URL, "127.0.0.1:" + namingPort);
+        env.put(Context.PROVIDER_URL, getAddress() + ":" + namingPort);
         env.put(NamingContext.JNP_DISABLE_DISCOVERY, "true");
 
         String username = getUsername();
