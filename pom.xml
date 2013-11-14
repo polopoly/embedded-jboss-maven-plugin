@@ -45,10 +45,19 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>jboss-maven-plugin</artifactId>
-      <type>maven-plugin</type>
-      <version>1.5.0</version>
+      <groupId>jboss</groupId>
+      <artifactId>jnp-client</artifactId>
+      <version>4.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>jboss</groupId>
+      <artifactId>jbosssx-client</artifactId>
+      <version>3.2.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.codehaus.plexus</groupId>
+      <artifactId>plexus-utils</artifactId>
+      <version>1.5.15</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -62,5 +71,4 @@
       <scope>runtime</scope>
     </dependency>
   </dependencies>
-
 </project>
