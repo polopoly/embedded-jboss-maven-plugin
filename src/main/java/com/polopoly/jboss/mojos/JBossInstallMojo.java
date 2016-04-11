@@ -30,6 +30,14 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
     protected File jbossHome;
 
     /**
+     * The location of Kafka.
+     *
+     * @parameter expression="${project.build.directory}/kafka"
+     * @required
+     */
+    protected File kafkaHome;
+
+    /**
      * The jboss distribution (in the form of artifact coordinates).
      * @parameter
      */

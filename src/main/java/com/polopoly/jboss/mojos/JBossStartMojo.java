@@ -2,18 +2,27 @@ package com.polopoly.jboss.mojos;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 
+import com.sun.javafx.scene.control.behavior.TableRowBehavior;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
 import com.polopoly.jboss.Environment;
 import com.polopoly.jboss.JBossOperations;
+import org.apache.maven.wagon.ConnectionException;
+import sun.nio.ch.IOUtil;
 
 /**
  * Will download, install, and start a pre-configured JBoss Application Server on localhost and deploy all listed deployments.
@@ -60,6 +69,43 @@ public class JBossStartMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+
+
+        try {
+            System.out.println("Attempting to start ZooKeeper.");
+            runZooKeeper();
+            final int zooPort = Integer.parseInt(getProperty(new File(kafkaHome, "config/zookeeper.properties"), "clientPort"));
+            waitFor(zooPort);
+            System.out.println("ZooKeeper is running.");
+
+            System.out.println("Attempting to start Kafka.");
+            runKafka();
+            final int kafkaPort = Integer.parseInt(getProperty(new File(kafkaHome, "config/server.properties"), "port"));
+            waitFor(kafkaPort);
+            System.out.println("Kafka is running.");
+
+            Runtime.getRuntime().addShutdownHook(new Thread(){
+                @Override
+                public void run() {
+                    try {
+                        System.out.println("Stopping Kafka.");
+                        runScript(kafkaHome, "bin/kafka-server-stop.sh");
+                        waitUntil(kafkaPort);
+                        System.out.println("Kafka stopped.");
+
+                        System.out.println("Stopping ZooKeeper.");
+                        runScript(kafkaHome, "bin/zookeeper-server-stop.sh");
+                        waitUntil(zooPort);
+                        System.out.println("ZooKeeper stopped.");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } catch (Exception e) {
+            throw new MojoExecutionException("External Servers could not be started.");
+        }
+
         if (isNamingPortFree()) {
             info("JBoss is already running?");
             throw new MojoExecutionException("There is already a process occupying port " + namingPort);
@@ -160,6 +206,83 @@ public class JBossStartMojo
         return commandWithOptions.toArray(new String[commandWithOptions.size()]);
     }
 
+    private void runZooKeeper() {
+        try {
+            runScript(kafkaHome, "bin/zookeeper-server-start.sh config/zookeeper.properties >zookeeper.log & disown");
+        } catch (IOException e) {
+            info("ZooKeeper could not be started");
+            e.printStackTrace();
+            return;
+        }
+    }
+
+    private void runKafka() {
+        try {
+            runScript(kafkaHome, "bin/kafka-server-start.sh config/server.properties >kafka.log & disown");
+        } catch (IOException e) {
+            info("Kafka could not be started");
+            e.printStackTrace();
+            return;
+        }
+    }
+
+    private void runScript(File executingDir, String script) throws IOException {
+        File file = File.createTempFile("file" + Math.random(), ".sh", executingDir);
+        file.setExecutable(true);
+        file.deleteOnExit();
+
+        FileWriter fw = null;
+        try{
+            fw = new FileWriter(file);
+            fw.write(script);
+        } finally {
+            IOUtils.closeQuietly(fw);
+        }
+
+        new ProcessBuilder()
+                .directory(kafkaHome)
+                .inheritIO()
+                .command(file.getAbsolutePath())
+                .start();
+    }
+
+    private String getProperty(File file, String key) throws IOException {
+        Properties props = new Properties();
+        FileInputStream in = null;
+        try {
+            in = new FileInputStream(file);
+            props.load(in);
+        } finally {
+            IOUtils.closeQuietly(in);
+        }
+
+        return (String) props.get(key);
+    }
+
+    private void waitFor(int port) throws ConnectionException {
+        for(int tries = 0; tries < 3; tries++) {
+            try {
+                new Socket("localhost", port).close();
+                return;
+            } catch (IOException e) {
+                System.out.println("Server localhost:" + port + " not up yet. Retrying...");
+                sleep(3000);
+            }
+        }
+        throw new ConnectionException("Server did not respond after 3 tries.");
+    }
+
+    private void waitUntil(int port) {
+        try {
+            Socket socket = new Socket("localhost", port);
+            InputStream in = socket.getInputStream();
+            while(in != null && in.read() != -1) {
+                sleep(1000);
+            }
+        } catch (IOException e) {
+        }
+    }
+
     private class JBossLogger
         extends Thread
     {
@@ -189,6 +312,15 @@ public class JBossStartMojo
                     }
                 }
             } catch (IOException ioe) {}
+        }
+    }
+
+
+    static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }
