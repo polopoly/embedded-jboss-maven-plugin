@@ -1,9 +1,15 @@
 package com.polopoly.jboss.mojos;
 
+import com.polopoly.jboss.Environment;
+import com.polopoly.jboss.JBossOperations;
+import org.apache.commons.io.IOUtils;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.wagon.ConnectionException;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,16 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-
-import com.sun.javafx.scene.control.behavior.TableRowBehavior;
-import org.apache.commons.io.IOUtils;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-
-import com.polopoly.jboss.Environment;
-import com.polopoly.jboss.JBossOperations;
-import org.apache.maven.wagon.ConnectionException;
-import sun.nio.ch.IOUtil;
 
 /**
  * Will download, install, and start a pre-configured JBoss Application Server on localhost and deploy all listed deployments.
@@ -94,7 +90,8 @@ public class JBossStartMojo
                         System.out.println("Kafka stopped.");
 
                         System.out.println("Stopping ZooKeeper.");
-                        runScript(kafkaHome, "bin/zookeeper-server-stop.sh");
+                        runScript(kafkaHome, "lsof -t -i :" + zooPort + " | xargs kill -15");
+//                        runScript(kafkaHome, "bin/zookeeper-server-stop.sh");
                         waitUntil(zooPort);
                         System.out.println("ZooKeeper stopped.");
                     } catch (IOException e) {
