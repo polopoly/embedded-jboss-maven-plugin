@@ -37,6 +37,15 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
      */
     protected File kafkaHome;
 
+
+    /**
+     * The location of Solr 5.
+     *
+     * @parameter expression="${project.build.directory}/solr"
+     * @required
+     */
+    protected File solrHome;
+
     /**
      * The jboss distribution (in the form of artifact coordinates).
      * @parameter

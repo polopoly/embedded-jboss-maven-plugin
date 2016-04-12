@@ -69,16 +69,23 @@ public class JBossStartMojo
 
         try {
             System.out.println("Attempting to start ZooKeeper.");
-            runZooKeeper();
+            runScript(kafkaHome, "bin/zookeeper-server-start.sh config/zookeeper.properties >zookeeper.log & disown");
             final int zooPort = Integer.parseInt(getProperty(new File(kafkaHome, "config/zookeeper.properties"), "clientPort"));
             waitFor(zooPort);
             System.out.println("ZooKeeper is running.");
 
             System.out.println("Attempting to start Kafka.");
-            runKafka();
+            runScript(kafkaHome, "bin/kafka-server-start.sh config/server.properties >kafka.log & disown");
             final int kafkaPort = Integer.parseInt(getProperty(new File(kafkaHome, "config/server.properties"), "port"));
             waitFor(kafkaPort);
             System.out.println("Kafka is running.");
+
+            System.out.println("Attempting to start Solr.");
+            Process solrProcess = runScript(solrHome, "bin/solr start -e cloud -noprompt");
+            solrProcess.waitFor();
+            waitFor(8983);
+            waitFor(7574);
+            System.out.println("Solr is running.");
 
             Runtime.getRuntime().addShutdownHook(new Thread(){
                 @Override
@@ -91,10 +98,18 @@ public class JBossStartMojo
 
                         System.out.println("Stopping ZooKeeper.");
                         runScript(kafkaHome, "lsof -t -i :" + zooPort + " | xargs kill -15");
-//                        runScript(kafkaHome, "bin/zookeeper-server-stop.sh");
                         waitUntil(zooPort);
                         System.out.println("ZooKeeper stopped.");
+
+                        System.out.println("Stoppng Solr.");
+                        Process stopProcess = runScript(solrHome, "bin/solr stop -all");
+                        stopProcess.waitFor();
+                        waitUntil(8983);
+                        waitUntil(7574);
+                        System.out.println("Solr stopped.");
                     } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
@@ -203,27 +218,7 @@ public class JBossStartMojo
         return commandWithOptions.toArray(new String[commandWithOptions.size()]);
     }
 
-    private void runZooKeeper() {
-        try {
-            runScript(kafkaHome, "bin/zookeeper-server-start.sh config/zookeeper.properties >zookeeper.log & disown");
-        } catch (IOException e) {
-            info("ZooKeeper could not be started");
-            e.printStackTrace();
-            return;
-        }
-    }
-
-    private void runKafka() {
-        try {
-            runScript(kafkaHome, "bin/kafka-server-start.sh config/server.properties >kafka.log & disown");
-        } catch (IOException e) {
-            info("Kafka could not be started");
-            e.printStackTrace();
-            return;
-        }
-    }
-
-    private void runScript(File executingDir, String script) throws IOException {
+    private Process runScript(File executingDir, String script) throws IOException {
         File file = File.createTempFile("file" + Math.random(), ".sh", executingDir);
         file.setExecutable(true);
         file.deleteOnExit();
@@ -236,8 +231,8 @@ public class JBossStartMojo
             IOUtils.closeQuietly(fw);
         }
 
-        new ProcessBuilder()
-                .directory(kafkaHome)
+        return new ProcessBuilder()
+                .directory(executingDir)
                 .inheritIO()
                 .command(file.getAbsolutePath())
                 .start();
