@@ -1,14 +1,15 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.ArtifactData;
-import com.polopoly.jboss.JBossOperations;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
+import com.polopoly.jboss.ArtifactData;
+import com.polopoly.jboss.JBossOperations;
 
 /**
  * Will deploy files into a running JBoss instance
@@ -39,7 +40,7 @@ public class JBossDeployMojo extends JBossInstallMojo {
     }
 
     protected void deployAndWait() throws MojoExecutionException, MojoFailureException {
-        JBossOperations operations = new JBossOperations(connect());
+        JBossOperations operations = new JBossOperations(connect(false));
         if (file != null) {
             redeploy(operations, file);
         }

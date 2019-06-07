@@ -47,7 +47,7 @@ public abstract class AbstractJBossMBeanMojo
 
     private volatile MBeanServerConnection _connection;
 
-    public MBeanServerConnection connect()
+    public MBeanServerConnection connect(final boolean canBeStopped)
         throws MojoExecutionException
     {
         if (_connection != null) {
@@ -55,7 +55,13 @@ public abstract class AbstractJBossMBeanMojo
         }
 
         info("Waiting to retrieve JBoss JMX MBean connection... ");
-        InitialContext ctx = getInitialContext();
+        InitialContext ctx = null;
+        try {
+            ctx = getInitialContext();
+        } catch (MojoExecutionException e) {
+            e.printStackTrace();
+            throw e;
+        }
 
         // Try to get JBoss jmx MBean connection
         MBeanServerConnection server = null;
@@ -69,6 +75,10 @@ public abstract class AbstractJBossMBeanMojo
             catch (NamingException e) {
                 ne = e;
                 info("Waiting to retrieve JBoss JMX MBean connection... ");
+                if (!canBeStopped && isNamingPortFree()) {
+                    warn("JBoss does not seems to be up anymore.");
+                    break;
+                }
             }
 
             sleep("Thread interrupted while waiting for MBean connection");

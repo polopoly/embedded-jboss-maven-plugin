@@ -72,7 +72,45 @@ public class JBossStartMojo
         startIfNamingPortIsFree();
 
         // Deploy artifacts
-        deployAndWait();
+        try {
+            deployAndWait();
+        } catch (MojoExecutionException | MojoFailureException e) {
+            info("Stopping jboss due to failed deployment: " + e.getMessage());
+            stop();
+            throw e;
+        }
+    }
+
+    private void stop() {
+        try {
+            JBossOperations operations = new JBossOperations(connect(false));
+            if (!isNamingPortFree() || isStarted(operations)) {
+                operations.shutDown();
+
+                try {
+                    info("Waiting for JBoss to shutdown");
+                    while (isStarted(operations)) {
+                        sleep("Interrupted while waiting for JBoss to stop");
+                    }
+                } catch (RuntimeException re) {
+                }
+            } else {
+                info("JBoss seems to be already down");
+            }
+            while(!isNamingPortFree()) {
+                sleep("Interrupted while waiting for JBoss to stop");
+            }
+        } catch (MojoExecutionException e) {
+            warn("cannot stop jboss: {}", e.getMessage());
+        }
+    }
+
+    private boolean isStarted(final JBossOperations operations) {
+        try {
+            return operations.isStarted();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -100,9 +138,14 @@ public class JBossStartMojo
             startOpts.add("-b");
             startOpts.add(bindAddress);
 
-            String osName = System.getProperty("os.name");
+            final String osName = System.getProperty("os.name");
+            final String[] params = osName.startsWith("Windows")
+                    ? createWindowsCommand(startOpts)
+                    : createUnixCommand(startOpts);
 
-            ProcessBuilder pb = new ProcessBuilder(osName.startsWith("Windows") ? createWindowsCommand(startOpts) : createUnixCommand(startOpts));
+            System.out.println("Start With\n" + arrayToString(params));
+
+            ProcessBuilder pb = new ProcessBuilder(params);
 
             pb.directory(new File(jbossHome, "bin"));
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
@@ -127,7 +170,7 @@ public class JBossStartMojo
         }
 
         // Wait for jboss to become ready
-        JBossOperations operations = new JBossOperations(connect());
+        JBossOperations operations = new JBossOperations(connect(true));
         for (int i = 0; i < retry; i++) {
             if (operations.isStarted()) {
                 break;
@@ -137,12 +180,15 @@ public class JBossStartMojo
         }
     }
 
+    private String arrayToString(final String[] params) {
+        return String.join(" ", params);
+    }
+
     private String[] createWindowsCommand(final List<String> startOpts)
     {
         String jbossWindowsCommand = STARTUP_COMMAND + ".bat";
-        List<String> commandWithOptions = new ArrayList<String>();
 
-        commandWithOptions.addAll(Arrays.asList("cmd", "/c"));
+        List<String> commandWithOptions = new ArrayList<String>(Arrays.asList("cmd", "/c"));
         commandWithOptions.add(jbossWindowsCommand);
         commandWithOptions.addAll(startOpts);
 
@@ -157,7 +203,7 @@ public class JBossStartMojo
         commandWithOptions.add(jbossUnixCommand);
         commandWithOptions.addAll(startOpts);
 
-        return commandWithOptions.toArray(new String[commandWithOptions.size()]);
+        return commandWithOptions.toArray(new String[0]);
     }
 
     private class JBossLogger
