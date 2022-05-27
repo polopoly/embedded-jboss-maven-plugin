@@ -52,6 +52,20 @@ public class JBossStartMojo
     public static final String STARTUP_COMMAND = "run";
 
     /**
+     * The set of system options to pass to the RPC "run" command.
+     *
+     * @parameter default-value="" expression="${jboss.rpcSystemOptions}"
+     */
+    protected String rpcSystemOptions;
+
+    /**
+     * The set of options to pass to the RPC "run" command.
+     *
+     * @parameter default-value="" expression="${jboss.rpcStartOptions}"
+     */
+    protected String rpcStartOptions;
+
+    /**
      * Will install a JBoss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
      *
      * @throws MojoExecutionException
@@ -60,6 +74,12 @@ public class JBossStartMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        installRpcIfNotAlreadyInstalled();
+
+        deployAdmCoreWars();
+
+        startRpcIfPortIsFree();
+
         if (isNamingPortFree()) {
             info("JBoss is already running?");
             throw new MojoExecutionException("There is already a process occupying port " + namingPort);
@@ -138,8 +158,7 @@ public class JBossStartMojo
             startOpts.add("-b");
             startOpts.add(bindAddress);
 
-            final String osName = System.getProperty("os.name");
-            final String[] params = osName.startsWith("Windows")
+            final String[] params = isWindows()
                     ? createWindowsCommand(startOpts)
                     : createUnixCommand(startOpts);
 
@@ -180,7 +199,111 @@ public class JBossStartMojo
         }
     }
 
-    private String arrayToString(final String[] params) {
+    /**
+     * Start JBoss If <code>namingPort</code> is free.
+     *
+     * @throws MojoExecutionException
+     */
+    protected void startRpcIfPortIsFree()
+            throws MojoExecutionException
+    {
+        if (!isRpcPortRunning()) {
+            info("Starting RPC");
+
+            List<String> startOpts = new ArrayList<String>();
+
+            startOpts.add("java");
+
+            if (rpcSystemOptions != null) {
+                startOpts.addAll(Arrays.asList(rpcSystemOptions.replaceAll("\r\n", " ")
+                                                               .replaceAll("\n", " ")
+                                                               .split("\\s+")));
+            }
+
+            if (rpcDistributionFile == null) {
+                if (rpcDistribution == null) {
+                    throw new MojoExecutionException("Configure rpcDistribution");
+                }
+                rpcDistributionFile = resolveArtifact(rpcDistribution).getFile();
+            }
+
+            startOpts.add("-jar");
+            startOpts.add("./lib/" + rpcDistributionFile.getName());
+
+            startOpts.add("-p");
+            startOpts.add(rpcPort);
+
+            //final File jbossDataDir = new File(new File(new File(jbossHome, "server"), "default"), "data");
+            //startOpts.add("--db");
+            //startOpts.add(jbossDataDir.getAbsolutePath());
+            startOpts.add("--db");
+            startOpts.add(rpcData.getAbsolutePath());
+
+            startOpts.add("-l");
+            startOpts.add(rpcLock.getAbsolutePath());
+
+            startOpts.add("-w");
+            startOpts.add(new File(rpcHome, rpcWebappsName).getAbsolutePath());
+
+            if (rpcStartOptions != null) {
+                startOpts.addAll(Arrays.asList(rpcStartOptions.split("\\s+")));
+            }
+
+            final String[] params = isWindows()
+                    ? createWindowsCommand(startOpts)
+                    : startOpts.toArray(new String[] {});
+
+            System.out.println("Start With\n" + arrayToString(params));
+
+            ProcessBuilder pb = new ProcessBuilder(params);
+
+            pb.directory(rpcHome);
+
+            if (environments != null) {
+                for (Environment env : environments) {
+                    if (env.getName() != null && env.getName().length() > 0 &&
+                            env.getValue() != null && env.getValue().length() > 0)
+                    {
+                        pb.environment().put(env.getName(), env.getValue());
+                    }
+                }
+            }
+
+            try {
+                Process proc = pb.start();
+                new JBossLogger(proc.getInputStream(), "out", logToConsole).start();
+                new JBossLogger(proc.getErrorStream(), "err", logToConsole).start();
+            } catch (Exception ioe) {
+                throw new MojoExecutionException("Unable to startRpcIfPortIsFree rpc!", ioe);
+            }
+        }
+
+        for (int i = 0; i < retry; i++) {
+            if (isRpcPortRunning()) {
+                break;
+            }
+
+            sleep("Interrupted while waiting for JBoss to start");
+        }
+
+        if (!isRpcPortRunning()) {
+            throw new MojoExecutionException("Unable to startRpcIfPortIsFree rpc!");
+        }
+
+        /*
+        // Wait for jboss to become ready
+        JBossOperations operations = new JBossOperations(connect(true));
+        for (int i = 0; i < retry; i++) {
+            if (operations.isStarted()) {
+                break;
+            }
+
+            sleep("Interrupted while waiting for JBoss to start");
+        }
+        */
+    }
+
+    String arrayToString(final String[] params) {
         return String.join(" ", params);
     }
 
@@ -206,7 +329,7 @@ public class JBossStartMojo
         return commandWithOptions.toArray(new String[0]);
     }
 
-    private class JBossLogger
+    class JBossLogger
         extends Thread
     {
         private final BufferedReader _stream;

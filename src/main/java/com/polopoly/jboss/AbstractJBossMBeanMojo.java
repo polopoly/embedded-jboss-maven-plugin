@@ -1,7 +1,13 @@
 package com.polopoly.jboss;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
 import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import javax.management.MBeanServerConnection;
@@ -44,6 +50,13 @@ public abstract class AbstractJBossMBeanMojo
      * @parameter default-value="localhost" expression="${jboss.bindAddress}"
      */
     protected String bindAddress;
+
+    /**
+     * The port for the rpc service.
+     *
+     * @parameter default-value="8090" expression="${jboss.rpcPort}"
+     */
+    protected String rpcPort;
 
     private volatile MBeanServerConnection _connection;
 
@@ -108,6 +121,59 @@ public abstract class AbstractJBossMBeanMojo
         return true;
     }
 
+    /**
+     * Determine whether <code>rpcPort</code> is free.
+     * @return
+     */
+    protected boolean isRpcPortRunning()
+    {
+        try {
+            final URL url = new URL(String.format("http://%s:%s/internal/running", getAddress(), rpcPort));
+            final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            try {
+                //final byte[] postDataBytes = "".getBytes(StandardCharsets.UTF_8);
+                //conn.setRequestMethod("POST");
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setRequestProperty("Accept-Charset", "UTF-8");
+                //conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
+                conn.setRequestProperty("User-Agent", "jboss-maven-plugin");
+                /*
+                conn.setDoOutput(true);
+
+                try (OutputStream output = conn.getOutputStream()) {
+                    output.write(postDataBytes);
+                }
+                */
+
+                final int status = conn.getResponseCode();
+                info("status " + status);
+                if (status != 200) {
+                    return false;
+                }
+
+                final String output = getResponseContent(conn);
+                info(output);
+                return output.contains("OK");
+            } finally {
+                conn.disconnect();
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private String getResponseContent(final HttpURLConnection conn) throws IOException {
+        try (Reader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            final StringBuilder sb = new StringBuilder();
+            for (int c; (c = in.read()) >= 0; ) {
+                sb.append((char) c);
+            }
+            return sb.toString();
+        }
+    }
+
     private String getAddress() {
         if ("0.0.0.0".equals(bindAddress)) {
             return "localhost";
@@ -152,5 +218,10 @@ public abstract class AbstractJBossMBeanMojo
         } catch (InterruptedException e) {
             warn(interruptedMessage + "\n" + e.getMessage());
         }
+    }
+
+    protected boolean isWindows() {
+        final String osName = System.getProperty("os.name");
+        return osName.startsWith("Windows");
     }
 }
