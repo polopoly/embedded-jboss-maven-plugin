@@ -1,17 +1,19 @@
 package com.polopoly.jboss.mojos;
 
-import com.polopoly.jboss.AbstractJBossMBeanMojo;
-import com.polopoly.jboss.ArtifactData;
-import com.polopoly.jboss.JBossDistribution;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.codehaus.plexus.util.Expand;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.polopoly.jboss.AbstractJBossMBeanMojo;
+import com.polopoly.jboss.AdmDistribution;
+import com.polopoly.jboss.ArtifactData;
+import com.polopoly.jboss.JBossDistribution;
 
 /**
  * Will download and install a pre-configured JBoss Application Server
@@ -72,11 +74,66 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
      */
     protected boolean reinstall;
 
+    /**
+     * The location of ADM Content Services Home.
+     *
+     * @parameter default-value="${project.build.directory}/embedded-adm"
+     * @required
+     */
+    protected File admHome;
+
+    /**
+     * The location of ADM Content Services data.
+     *
+     * @parameter default-value="${project.build.directory}/embedded-adm/data"
+     * @required
+     */
+    protected File admData;
+
+    /**
+     * The location of ADM Content Services lock file.
+     *
+     * @parameter default-value="${project.build.directory}/embedded-adm/locks/adm.lock"
+     * @required
+     */
+    protected File admLock;
+
+    /**
+     * The adm content services distribution (in the form of artifact coordinates).
+     * @parameter
+     */
+    protected AdmDistribution admDistribution;
+
+    /**
+     * The adm content services distribution (in the form of path to file). If specified takes precedence over admDistribution.
+     * @parameter
+     */
+    protected File admDistributionFile;
+
+    /**
+     * Patch artifacts that will be applied to the supplied server id
+     * @parameter
+     */
+    protected ArtifactData[] admPatches = new ArtifactData[0];
+
+    /**
+     * Patch files that will be applied to the supplied server id
+     * @parameter
+     */
+    protected File[] admPatchFiles = new File[0];
+
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (!reinstall && isAdmInstalled()) {
+            info("ADM Content Services are already installed?");
+            throw new MojoExecutionException("There is already a directory called " + new File(admHome, "lib").getAbsolutePath());
+        }
+
         if (!reinstall && isInstalled()) {
             info("JBoss is already installed?");
             throw new MojoExecutionException("There is already a directory called " + new File(jbossHome, "bin").getAbsolutePath());
         }
+
+        installAdmIfNotAlreadyInstalled();
         installIfNotAlreadyInstalled();
     }
 
@@ -86,6 +143,14 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
      */
     protected boolean isInstalled() {
         return new File(jbossHome, "bin").exists();
+    }
+
+    /**
+     * Determine if jboss is installed
+     * @return
+     */
+    protected boolean isAdmInstalled() {
+        return new File(admHome, "lib").exists();
     }
 
     /**
@@ -110,12 +175,74 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
                 applyPatches(serverPatches, serverPatchFiles, new File(jbossHome, "server/" + serverId));
 
                 // Make sure the execution flag is lit
+                //noinspection ResultOfMethodCallIgnored
                 new File(jbossHome, "bin/run.sh").setExecutable(true);
 
             } catch (Exception e) {
                 throw new MojoExecutionException("Configure Download/Configure JBoss", e);
             }
         }
+    }
+
+    /**
+     * Will install a new adm if either <code>reinstall</code> is set or there is no adm at the <code>admHome</code> location.
+     * @throws MojoExecutionException
+     * @throws MojoFailureException
+     */
+    protected void installAdmIfNotAlreadyInstalled() throws MojoExecutionException, MojoFailureException {
+        if (shouldStartAdm() && (reinstall || !isAdmInstalled())) {
+            info("Installing ADM Content Services");
+            try {
+                setupAdmDistributionFile();
+
+                doInstallAdm();
+            } catch (Exception e) {
+                throw new MojoExecutionException("Configure Download/Configure ADM Content Services", e);
+            }
+        } else if (shouldStartAdm()) {
+            try {
+                setupAdmDistributionFile();
+                String end = "";
+                if (admDistribution.classifier != null) {
+                    end += "-" + admDistribution.classifier;
+                }
+                if (admDistribution.type != null) {
+                    end += "." + admDistribution.type;
+                } else {
+                    end += ".jar";
+                }
+                if (admDistributionFile.getAbsolutePath().endsWith("-SNAPSHOT" + end)) {
+                    info("snapshot detected - repeat install");
+                    doInstallAdm();
+                }
+            } catch (Exception e) {
+                throw new MojoExecutionException("Configure Download/Configure ADM Content Services", e);
+            }
+        }
+    }
+
+    private void setupAdmDistributionFile() throws MojoExecutionException {
+        if (admDistributionFile == null) {
+            if (admDistribution == null) {
+                throw new MojoExecutionException("Configure admDistribution");
+            }
+            admDistributionFile = resolveArtifact(admDistribution).getFile();
+        }
+    }
+
+    protected boolean shouldStartAdm() {
+        return admDistributionFile != null || admDistribution != null;
+    }
+
+    private void doInstallAdm() throws MojoExecutionException {
+        // Install adm
+        info("Installing '%s' to '%s'", admDistributionFile, admHome);
+        unzip(admDistributionFile, admHome);
+        applyPatches(admPatches, admPatchFiles, admHome);
+
+        // Make sure the execution flag is lit
+        //noinspection ResultOfMethodCallIgnored
+        new File(admHome, "bin/run.sh").setExecutable(true);
     }
 
     private List<File> applyPatches(ArtifactData[] patches, File[] patchFiles, File target) throws MojoExecutionException {
@@ -141,4 +268,5 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
             throw new MojoExecutionException("Unable to expand jboss archive", e);
         }
     }
+
 }

@@ -1,9 +1,11 @@
 package com.polopoly.jboss.mojos;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 
-import com.polopoly.jboss.AbstractJBossMBeanMojo;
 import com.polopoly.jboss.JBossOperations;
 
 /**
@@ -11,9 +13,80 @@ import com.polopoly.jboss.JBossOperations;
  * @goal stop
  * @aggregator
  */
-public class JBossStopMojo extends AbstractJBossMBeanMojo {
+public class JBossStopMojo extends JBossStartMojo {
 
     public void execute() throws MojoExecutionException, MojoFailureException {
+        stoppingJBoss();
+        stoppingAdm();
+    }
+
+    private void stoppingAdm() throws MojoExecutionException {
+        if (!shouldStartAdm()) {
+            return;
+        }
+        info("Shutting down ADM Content Services " + isAdmPortRunning());
+        if (!admLock.exists()) {
+            info("lockFile does not exists");
+            if (!isAdmPortRunning()) {
+                info("ADM Content Services are already stopped");
+                return;
+            }
+        }
+        if (isAdmPortRunning()) {
+            List<String> startOpts = new ArrayList<>();
+
+            if (admDistributionFile == null) {
+                if (admDistribution == null) {
+                    throw new MojoExecutionException("Configure admDistribution");
+                }
+                admDistributionFile = resolveArtifact(admDistribution).getFile();
+            }
+
+            startOpts.add("-p");
+            startOpts.add(admPort);
+
+            startOpts.add("--stop");
+
+            final String[] params = isWindows()
+                ? createWindowsCommand(ADM_STARTUP_COMMAND, startOpts)
+                : createUnixCommand(ADM_STARTUP_COMMAND, startOpts);
+
+            info("Stop With\n" + arrayToString(params));
+
+            ProcessBuilder pb = new ProcessBuilder(params);
+
+            pb.directory(admHome);
+
+            setupEnvironments(admEnvironments, pb);
+
+            try {
+                Process proc = pb.start();
+                new ADMLogger(proc.getInputStream(), "out", logToConsole).start();
+                new ADMLogger(proc.getErrorStream(), "err", logToConsole).start();
+
+                proc.waitFor();
+            } catch (Exception ioe) {
+                throw new MojoExecutionException("Unable to stop ADM Content Services!", ioe);
+            }
+        }
+
+        int maxRetry = retry;
+        while (isAdmPortRunning()) {
+            if (maxRetry-- <= 0) {
+                throw new MojoExecutionException("timeout waiting for ADM Content Services to stop");
+            }
+            sleep("Interrupted while waiting for ADM Content Services to stop");
+        }
+
+        while (admLock.exists()) {
+            if (maxRetry-- <= 0) {
+                throw new MojoExecutionException("timeout waiting for ADM Content Services to stop");
+            }
+            sleep("Interrupted while waiting for ADM Content Services to stop");
+        }
+    }
+
+    private void stoppingJBoss() throws MojoExecutionException {
         info("Shutting down JBoss");
         JBossOperations operations = new JBossOperations(connect(false));
         if (!isNamingPortFree() || isStarted(operations)) {
@@ -24,7 +97,7 @@ public class JBossStopMojo extends AbstractJBossMBeanMojo {
                 while (isStarted(operations)) {
                     sleep("Interrupted while waiting for JBoss to stop");
                 }
-            } catch (RuntimeException re) {
+            } catch (RuntimeException ignore) {
             }
         } else {
             info("JBoss seems to be already down");

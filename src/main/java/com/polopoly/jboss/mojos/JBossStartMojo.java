@@ -5,6 +5,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +56,46 @@ public class JBossStartMojo
     public static final String STARTUP_COMMAND = "run";
 
     /**
+     * Custom environment variables to pass to the ADM "run" command.
+     *
+     * @parameter
+     */
+    protected Environment[] admEnvironments;
+
+    /**
+     * The set of system options to pass to the ADM "run" command.
+     *
+     * @parameter default-value="" expression="${jboss.admSystemOptions}"
+     */
+    protected String admSystemOptions;
+
+    /**
+     * The set of options to pass to the ADM "run" command.
+     *
+     * @parameter default-value="" expression="${jboss.admStartOptions}"
+     */
+    protected String admStartOptions;
+
+    /**
+     * The set of system options to pass to the ADM "run" command.
+     *
+     * @parameter default-value="" expression="${jboss.admSettings}"
+     */
+    protected String admSettings;
+
+    /**
+     * The set of system options to pass to the ADM "run" command.
+     *
+     * @parameter default-value="" expression="${project.build.directory}/embedded-adm/conf/settings.yml"
+     */
+    protected File admSettingsFile;
+
+    /**
+     * The command to start ADM.
+     */
+    public static final String ADM_STARTUP_COMMAND = "bin/run";
+
+    /**
      * Will install a JBoss server and start it. If 'namingPort' is occupied the mojo will abort with an exception.
      *
      * @throws MojoExecutionException
@@ -60,6 +104,10 @@ public class JBossStartMojo
     public void execute()
         throws MojoExecutionException, MojoFailureException
     {
+        installAdmIfNotAlreadyInstalled();
+
+        startAdmIfPortIsFree();
+
         if (isNamingPortFree()) {
             info("JBoss is already running?");
             throw new MojoExecutionException("There is already a process occupying port " + namingPort);
@@ -138,10 +186,9 @@ public class JBossStartMojo
             startOpts.add("-b");
             startOpts.add(bindAddress);
 
-            final String osName = System.getProperty("os.name");
-            final String[] params = osName.startsWith("Windows")
-                    ? createWindowsCommand(startOpts)
-                    : createUnixCommand(startOpts);
+            final String[] params = isWindows()
+                ? createWindowsCommand(startOpts)
+                : createUnixCommand(startOpts);
 
             System.out.println("Start With\n" + arrayToString(params));
 
@@ -150,15 +197,7 @@ public class JBossStartMojo
             pb.directory(new File(jbossHome, "bin"));
             pb.environment().put("JBOSS_HOME", jbossHome.getAbsolutePath());
 
-            if (environments != null) {
-                for (Environment env : environments) {
-                    if (env.getName() != null && env.getName().length() > 0 &&
-                        env.getValue() != null && env.getValue().length() > 0)
-                    {
-                        pb.environment().put(env.getName(), env.getValue());
-                    }
-                }
-            }
+            setupEnvironments(environments, pb);
 
             try {
                 Process proc = pb.start();
@@ -180,61 +219,209 @@ public class JBossStartMojo
         }
     }
 
-    private String arrayToString(final String[] params) {
+    /**
+     * Start ADM If <code>admPort</code> is free.
+     *
+     * @throws MojoExecutionException
+     */
+    protected void startAdmIfPortIsFree()
+        throws MojoExecutionException
+    {
+        if (!shouldStartAdm()) {
+            return;
+        }
+        if (!isAdmPortRunning()) {
+            info("Starting ADM Content Services");
+
+            File settings = null;
+            if ((admSettingsFile != null) && (admSettings != null) && !admSettings.trim().isEmpty()) {
+                if (admSettingsFile.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    admSettingsFile.delete();
+                }
+                final Path settingsPath = admSettingsFile.toPath().toAbsolutePath();
+                info("Writing settings to " + settingsPath);
+                try {
+                    Files.write(
+                        settingsPath,
+                        admSettings.getBytes(StandardCharsets.UTF_8),
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.CREATE
+                    );
+                    settings = settingsPath.toFile();
+                } catch (IOException e) {
+                    throw new MojoExecutionException("Cannot create " + settingsPath);
+                }
+            }
+
+            final List<String> startOpts = new ArrayList<>();
+
+            if (admSystemOptions != null) {
+                startOpts.addAll(Arrays.asList(admSystemOptions.replaceAll("\r\n", " ")
+                                                               .replaceAll("\n", " ")
+                                                               .split("\\s+")));
+            }
+
+            if (admDistributionFile == null) {
+                if (admDistribution == null) {
+                    throw new MojoExecutionException("Configure admDistribution");
+                }
+                admDistributionFile = resolveArtifact(admDistribution).getFile();
+            }
+
+            if (settings != null) {
+                startOpts.add("-f");
+                startOpts.add(settings.getAbsolutePath());
+            }
+
+            startOpts.add("-p");
+            startOpts.add(admPort);
+
+            startOpts.add("--db");
+            startOpts.add(admData.getAbsolutePath());
+
+            startOpts.add("--lock");
+            startOpts.add(admLock.getAbsolutePath());
+
+            if (admStartOptions != null) {
+                startOpts.addAll(Arrays.asList(admStartOptions.split("\\s+")));
+            }
+
+            final String[] params = isWindows()
+                ? createWindowsCommand(ADM_STARTUP_COMMAND, startOpts)
+                : createUnixCommand(ADM_STARTUP_COMMAND, startOpts);
+
+            info("Start With\n" + arrayToString(params));
+
+            ProcessBuilder pb = new ProcessBuilder(params);
+
+            pb.directory(admHome);
+
+            setupEnvironments(admEnvironments, pb);
+
+            try {
+                info("starting");
+                Process proc = pb.start();
+                new ADMLogger(proc.getInputStream(), "out", logToConsole).start();
+                new ADMLogger(proc.getErrorStream(), "err", logToConsole).start();
+
+                Thread.sleep(2000);
+            } catch (Exception ioe) {
+                throw new MojoExecutionException("Unable to startAdmIfPortIsFree ADM Content Services!", ioe);
+            }
+        }
+
+        for (int i = 0; i < retry; i++) {
+            if (isAdmPortRunning()) {
+                break;
+            }
+
+            sleep("Interrupted while waiting for ADM Content Services to start");
+        }
+
+        if (!isAdmPortRunning()) {
+            throw new MojoExecutionException("Unable to startAdmIfPortIsFree ADM Content Services!");
+        }
+    }
+
+    protected void setupEnvironments(final Environment[] environments,
+                                     final ProcessBuilder pb) {
+        if (environments != null) {
+            for (Environment env : environments) {
+                if (env.getName() != null && env.getName().length() > 0 &&
+                    env.getValue() != null && env.getValue().length() > 0) {
+                    final String value = env.getValue()
+                                            .replaceAll("\r\n", " ")
+                                            .replaceAll("\n", " ")
+                                            .replaceAll("\\s+", " ");
+                    pb.environment().put(env.getName(), value);
+                }
+            }
+        }
+    }
+
+    String arrayToString(final String[] params) {
         return String.join(" ", params);
     }
 
-    private String[] createWindowsCommand(final List<String> startOpts)
-    {
-        String jbossWindowsCommand = STARTUP_COMMAND + ".bat";
+    protected String[] createWindowsCommand(final List<String> startOpts) {
+        return createWindowsCommand(STARTUP_COMMAND, startOpts);
+    }
 
-        List<String> commandWithOptions = new ArrayList<String>(Arrays.asList("cmd", "/c"));
-        commandWithOptions.add(jbossWindowsCommand);
+    protected String[] createWindowsCommand(final String cmdName,
+                                            final List<String> startOpts) {
+        final String windowsCommand = cmdName + ".bat";
+
+        List<String> commandWithOptions = new ArrayList<>(Arrays.asList("cmd", "/c"));
+        commandWithOptions.add(windowsCommand);
         commandWithOptions.addAll(startOpts);
 
         return commandWithOptions.toArray(new String[0]);
     }
 
-    private String[] createUnixCommand(final List<String> startOpts)
-    {
-        String jbossUnixCommand = "./" + STARTUP_COMMAND + ".sh";
-        List<String> commandWithOptions = new ArrayList<String>();
+    protected String[] createUnixCommand(final List<String> startOpts) {
+        return createUnixCommand(STARTUP_COMMAND, startOpts);
+    }
 
-        commandWithOptions.add(jbossUnixCommand);
+    protected String[] createUnixCommand(final String cmdName,
+                                         final List<String> startOpts) {
+        final String unixCommand = "./" + cmdName + ".sh";
+        List<String> commandWithOptions = new ArrayList<>();
+
+        commandWithOptions.add(unixCommand);
         commandWithOptions.addAll(startOpts);
 
         return commandWithOptions.toArray(new String[0]);
     }
 
-    private class JBossLogger
+    class JBossLogger extends ProcessLogger {
+
+        JBossLogger(final InputStream stream, final String logName, final boolean log) {
+            super("JBOSS", stream, logName, log);
+        }
+    }
+
+    class ADMLogger extends ProcessLogger {
+
+        ADMLogger(final InputStream stream, final String logName, final boolean log) {
+            super("ADM", stream, logName, log);
+        }
+    }
+
+    abstract class ProcessLogger
         extends Thread
     {
-        private final BufferedReader _stream;
+        private final String prefix;
+        private final BufferedReader stream;
+        private final String logName;
+        private final boolean log;
 
-        private final String _logName;
-        private final boolean _log;
-
-        JBossLogger(final InputStream stream,
-                    final String logName,
-                    final boolean log)
-        {
-            _stream = new BufferedReader(new InputStreamReader(stream));
-
-            _logName = logName;
-            _log = log;
+        ProcessLogger(final String prefix,
+                      final InputStream stream,
+                      final String logName,
+                      final boolean log) {
+            this.prefix = prefix;
+            this.stream = new BufferedReader(new InputStreamReader(stream));
+            this.logName = logName;
+            this.log = log;
         }
 
-        public void run()
-        {
+        public void run() {
             String line;
 
             try {
-                while ((line = _stream.readLine()) != null) {
-                    if (_log) {
-                      info(" -- log(%s) -- %s", _logName, line);
+                while ((line = stream.readLine()) != null) {
+                    if (log) {
+                        info(prefix, logName, line);
                     }
                 }
-            } catch (IOException ioe) {}
+            } catch (IOException ignore) {
+            }
+        }
+
+        private void info(Object... args) {
+            getLog().info(String.format("[%s] -- log(%s) -- %s", args));
         }
     }
+
 }

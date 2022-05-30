@@ -1,7 +1,13 @@
 package com.polopoly.jboss;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.HttpURLConnection;
 import java.net.Socket;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 import javax.management.MBeanServerConnection;
@@ -44,6 +50,13 @@ public abstract class AbstractJBossMBeanMojo
      * @parameter default-value="localhost" expression="${jboss.bindAddress}"
      */
     protected String bindAddress;
+
+    /**
+     * The port for the adm content service.
+     *
+     * @parameter default-value="8090" expression="${jboss.admPort}"
+     */
+    protected String admPort;
 
     private volatile MBeanServerConnection _connection;
 
@@ -108,6 +121,49 @@ public abstract class AbstractJBossMBeanMojo
         return true;
     }
 
+    /**
+     * Determine whether <code>admPort</code> is free.
+     * @return
+     */
+    protected boolean isAdmPortRunning() {
+        try {
+            final URL url = new URL(String.format("http://%s:%s/internal/running", getAddress(), admPort));
+            info("Checking " + url);
+            final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            try {
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setRequestProperty("Accept", "application/json");
+                conn.setRequestProperty("Accept-Charset", "UTF-8");
+                conn.setRequestProperty("User-Agent", "jboss-maven-plugin");
+
+                final int status = conn.getResponseCode();
+                if (status != 200) {
+                    info("status " + status);
+                    return false;
+                }
+
+                final String output = getResponseContent(conn);
+                info(output);
+                return output.contains("OK");
+            } finally {
+                conn.disconnect();
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private String getResponseContent(final HttpURLConnection conn) throws IOException {
+        try (Reader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+            final StringBuilder sb = new StringBuilder();
+            for (int c; (c = in.read()) >= 0; ) {
+                sb.append((char) c);
+            }
+            return sb.toString();
+        }
+    }
+
     private String getAddress() {
         if ("0.0.0.0".equals(bindAddress)) {
             return "localhost";
@@ -145,12 +201,16 @@ public abstract class AbstractJBossMBeanMojo
         }
     }
 
-    protected void sleep(String interruptedMessage)
-    {
+    protected void sleep(String interruptedMessage) {
         try {
-            Thread.sleep(retryWait * 1000);
+            Thread.sleep(retryWait * 1000L);
         } catch (InterruptedException e) {
             warn(interruptedMessage + "\n" + e.getMessage());
         }
+    }
+
+    protected boolean isWindows() {
+        final String osName = System.getProperty("os.name");
+        return osName.startsWith("Windows");
     }
 }

@@ -98,7 +98,7 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
     {
         if ( serverId != null )
         {
-            // obtain authenication details for specified server from wagon
+            // obtain authentication details for specified server from wagon
             AuthenticationInfo info = wagonManager.getAuthenticationInfo( serverId );
             if ( info == null )
             {
@@ -122,7 +122,7 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
     {
         if ( serverId != null )
         {
-            // obtain authenication details for specified server from wagon
+            // obtain authentication details for specified server from wagon
             AuthenticationInfo info = wagonManager.getAuthenticationInfo( serverId );
             if ( info == null )
             {
@@ -134,7 +134,7 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
 
         return null;
     }
-    
+
     protected void info(String format, Object... args) {
         String message = args.length == 0 ? "[JBOSS] " + format : String.format("[JBOSS] " + format, args);
         getLog().info(message);
