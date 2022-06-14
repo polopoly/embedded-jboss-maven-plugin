@@ -112,13 +112,11 @@ public abstract class AbstractJBossMBeanMojo
      */
     protected boolean isNamingPortFree()
     {
-        try {
-            new Socket(getAddress(), new Integer(namingPort));
+        try (Socket ignore = new Socket(getAddress(), new Integer(namingPort))){
+            return true;
         } catch (IOException e) {
             return false;
         }
-
-        return true;
     }
 
     /**
