@@ -82,7 +82,7 @@ public abstract class AbstractJBossMBeanMojo
 
         for (int i = 0; i < retry; ++i) {
             try {
-                server = (MBeanServerConnection) ctx.lookup( "jmx/invoker/RMIAdaptor" );
+                server = (MBeanServerConnection) ctx.lookup("jmx/invoker/RMIAdaptor");
                 break;
             }
             catch (NamingException e) {
@@ -97,8 +97,8 @@ public abstract class AbstractJBossMBeanMojo
             sleep("Thread interrupted while waiting for MBean connection");
         }
 
-        if (server == null) {
-            throw new MojoExecutionException( "Unable to get JBoss JMX MBean connection: " + ne.getMessage(), ne );
+        if (server == null && ne != null) {
+            throw new MojoExecutionException("Unable to get JBoss JMX MBean connection: " + ne.getMessage(), ne);
         }
 
         _connection = server;
