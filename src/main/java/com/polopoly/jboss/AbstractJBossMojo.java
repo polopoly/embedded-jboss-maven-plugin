@@ -135,6 +135,11 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
         return null;
     }
 
+    protected void debug(String format, Object... args) {
+        String message = args.length == 0 ? "[JBOSS] " + format : String.format("[JBOSS] " + format, args);
+        getLog().debug(message);
+    }
+
     protected void info(String format, Object... args) {
         String message = args.length == 0 ? "[JBOSS] " + format : String.format("[JBOSS] " + format, args);
         getLog().info(message);

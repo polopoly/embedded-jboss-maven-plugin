@@ -75,6 +75,13 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
     protected boolean reinstall;
 
     /**
+     * The location of the JBOSS lock file.
+     *
+     * @parameter default-value="${project.build.directory}/embedded-jboss/server/default/tmp/run.pid"
+     */
+    protected File jbossLock;
+
+    /**
      * The location of ADM Content Services Home.
      *
      * @parameter default-value="${project.build.directory}/embedded-adm"
@@ -177,7 +184,6 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
                 // Make sure the execution flag is lit
                 //noinspection ResultOfMethodCallIgnored
                 new File(jbossHome, "bin/run.sh").setExecutable(true);
-
             } catch (Exception e) {
                 throw new MojoExecutionException("Configure Download/Configure JBoss", e);
             }

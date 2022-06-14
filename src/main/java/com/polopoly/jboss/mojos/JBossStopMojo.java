@@ -15,6 +15,13 @@ import com.polopoly.jboss.JBossOperations;
  */
 public class JBossStopMojo extends JBossStartMojo {
 
+    /**
+     * Wait for locks to disappear when stopping
+     *
+     * @parameter default-value="false" expression="${jboss.waitLock}"
+     */
+    protected boolean jbossWaitLock;
+
     public void execute() throws MojoExecutionException, MojoFailureException {
         stoppingJBoss();
         stoppingAdm();
@@ -84,6 +91,7 @@ public class JBossStopMojo extends JBossStartMojo {
             }
             sleep("Interrupted while waiting for ADM Content Services to stop");
         }
+        info("ADM Content Services stopped!");
     }
 
     private void stoppingJBoss() throws MojoExecutionException {
@@ -105,6 +113,22 @@ public class JBossStopMojo extends JBossStartMojo {
         while(!isNamingPortFree()) {
             sleep("Interrupted while waiting for JBoss to stop");
         }
+        debug("jbossWaitLock -> " + jbossWaitLock);
+        if (jbossWaitLock) {
+            if (jbossLock.exists()) {
+                info("Waiting for " + jbossLock + " to disappear");
+            }
+            int maxRetry = retry;
+            debug("jbossLock " + jbossLock.getAbsolutePath() + " exists: " + jbossLock.exists());
+            while (jbossLock.exists()) {
+                if (maxRetry-- <= 0) {
+                    throw new MojoExecutionException("timeout waiting for JBOSS to stop");
+                }
+                sleep("Interrupted while waiting for JBOSS to stop");
+                debug("exists: " + jbossLock.exists());
+            }
+        }
+        info("JBOSS stopped!");
     }
 
     private boolean isStarted(final JBossOperations operations) {
