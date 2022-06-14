@@ -3,7 +3,7 @@
 
   <groupId>com.polopoly.jboss</groupId>
   <artifactId>jboss-maven-plugin</artifactId>
-  <version>1.31-SNAPSHOT</version>
+  <version>1.31</version>
   <packaging>maven-plugin</packaging>
 
   <name>Embedded JBoss Maven Plugin</name>
@@ -21,7 +21,7 @@
   <scm>
     <connection>scm:git:git://github.com/polopoly/embedded-jboss-maven-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:polopoly/embedded-jboss-maven-plugin.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>jboss-maven-plugin-1.31</tag>
   </scm>
 
   <distributionManagement>
