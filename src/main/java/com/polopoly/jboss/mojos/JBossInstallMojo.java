@@ -201,7 +201,7 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
             try {
                 setupAdmDistributionFile();
 
-                doInstallAdm();
+                doInstallAdm(true);
             } catch (Exception e) {
                 throw new MojoExecutionException("Configure Download/Configure ADM Content Services", e);
             }
@@ -219,7 +219,7 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
                 }
                 if (admDistributionFile.getAbsolutePath().endsWith("-SNAPSHOT" + end)) {
                     info("snapshot detected - repeat install");
-                    doInstallAdm();
+                    doInstallAdm(false);
                 }
             } catch (Exception e) {
                 throw new MojoExecutionException("Configure Download/Configure ADM Content Services", e);
@@ -240,11 +240,13 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
         return admDistributionFile != null || admDistribution != null;
     }
 
-    private void doInstallAdm() throws MojoExecutionException {
+    private void doInstallAdm(final boolean applyPatches) throws MojoExecutionException {
         // Install adm
         info("Installing '%s' to '%s'", admDistributionFile, admHome);
         unzip(admDistributionFile, admHome);
+        if (applyPatches) {
         applyPatches(admPatches, admPatchFiles, admHome);
+        }
 
         // Make sure the execution flag is lit
         //noinspection ResultOfMethodCallIgnored
