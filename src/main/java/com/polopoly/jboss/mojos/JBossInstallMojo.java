@@ -92,8 +92,7 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
     /**
      * The location of ADM Content Services data.
      *
-     * @parameter default-value="${project.build.directory}/embedded-adm/data"
-     * @required
+     * @parameter
      */
     protected File admData;
 

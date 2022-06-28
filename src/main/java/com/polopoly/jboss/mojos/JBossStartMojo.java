@@ -277,8 +277,10 @@ public class JBossStartMojo
             startOpts.add("-p");
             startOpts.add(admPort);
 
-            startOpts.add("--db");
-            startOpts.add(admData.getAbsolutePath());
+            if (admData != null) {
+                startOpts.add("--db");
+                startOpts.add(admData.getAbsolutePath());
+            }
 
             startOpts.add("--lock");
             startOpts.add(admLock.getAbsolutePath());
