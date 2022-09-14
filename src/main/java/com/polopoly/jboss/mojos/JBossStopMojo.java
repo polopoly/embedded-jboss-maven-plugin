@@ -85,11 +85,15 @@ public class JBossStopMojo extends JBossStartMojo {
             sleep("Interrupted while waiting for ADM Content Services to stop");
         }
 
-        while (admLock.exists()) {
-            if (maxRetry-- <= 0) {
-                throw new MojoExecutionException("timeout waiting for ADM Content Services to stop");
+        if (admLock.exists()) {
+            info("waiting for " + admLock + " to disappear");
+            while (admLock.exists()) {
+                if (maxRetry-- <= 0) {
+                    throw new MojoExecutionException("timeout waiting for ADM Content Services to stop");
+                }
+                sleep("Interrupted while waiting for ADM Content Services to stop");
+                debug("admLock exists? " + admLock.exists());
             }
-            sleep("Interrupted while waiting for ADM Content Services to stop");
         }
         info("ADM Content Services stopped!");
     }
@@ -114,10 +118,8 @@ public class JBossStopMojo extends JBossStartMojo {
             sleep("Interrupted while waiting for JBoss to stop");
         }
         debug("jbossWaitLock -> " + jbossWaitLock);
-        if (jbossWaitLock) {
-            if (jbossLock.exists()) {
-                info("Waiting for " + jbossLock + " to disappear");
-            }
+        if (jbossWaitLock && jbossLock.exists()) {
+            info("Waiting for " + jbossLock + " to disappear");
             int maxRetry = retry;
             debug("jbossLock " + jbossLock.getAbsolutePath() + " exists: " + jbossLock.exists());
             while (jbossLock.exists()) {
@@ -125,7 +127,7 @@ public class JBossStopMojo extends JBossStartMojo {
                     throw new MojoExecutionException("timeout waiting for JBOSS to stop");
                 }
                 sleep("Interrupted while waiting for JBOSS to stop");
-                debug("exists: " + jbossLock.exists());
+                debug("jbossLock exists? " + jbossLock.exists());
             }
         }
         info("JBOSS stopped!");
