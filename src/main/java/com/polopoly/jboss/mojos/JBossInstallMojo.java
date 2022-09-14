@@ -128,6 +128,13 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
      */
     protected File[] admPatchFiles = new File[0];
 
+    /**
+     * Force re-installation of adm content services
+     * @parameter default-value="false" expression="${adm.reinstall}"
+     */
+    protected boolean admUpdate;
+
+
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (!reinstall && isAdmInstalled()) {
             info("ADM Content Services are already installed?");
@@ -216,8 +223,13 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
                 } else {
                     end += ".jar";
                 }
-                if (admDistributionFile.getAbsolutePath().endsWith("-SNAPSHOT" + end)) {
-                    info("snapshot detected - repeat install");
+                boolean updateInstall = admUpdate;
+                if (!updateInstall && admDistributionFile.getAbsolutePath().endsWith("-SNAPSHOT" + end)) {
+                    info("snapshot detected");
+                    updateInstall = true;
+                }
+                if (updateInstall) {
+                    info("repeat adm install");
                     doInstallAdm(false);
                 }
             } catch (Exception e) {
@@ -242,6 +254,10 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
     private void doInstallAdm(final boolean applyPatches) throws MojoExecutionException {
         // Install adm
         info("Installing '%s' to '%s'", admDistributionFile, admHome);
+        if (!applyPatches) {
+            info("Empty lib directory");
+            emptyDirectory(new File(admHome, "lib"));
+        }
         unzip(admDistributionFile, admHome);
         if (applyPatches) {
         applyPatches(admPatches, admPatchFiles, admHome);
@@ -249,7 +265,22 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
 
         // Make sure the execution flag is lit
         //noinspection ResultOfMethodCallIgnored
-        new File(admHome, "bin/run.sh").setExecutable(true);
+        new File(new File(admHome, "bin"), "run.sh").setExecutable(true);
+    }
+
+    private void emptyDirectory(final File directory) {
+        if (directory.exists() && directory.isDirectory()) {
+            final File[] files = directory.listFiles();
+            if (files != null) {
+                for (final File file : files) {
+                    if (file.exists() && !file.isDirectory()) {
+                        if (!file.delete()) {
+                            warn("Cannot delete " + file);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private List<File> applyPatches(ArtifactData[] patches, File[] patchFiles, File target) throws MojoExecutionException {
