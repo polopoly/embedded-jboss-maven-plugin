@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import javax.management.MBeanServerConnection;
 import javax.naming.Context;
@@ -112,9 +113,12 @@ public abstract class AbstractJBossMBeanMojo
      */
     protected boolean isNamingPortFree()
     {
-        try (Socket ignore = new Socket(getAddress(), new Integer(namingPort))){
+        debug("Checking " + getAddress() + " on port " + namingPort);
+        try (Socket ignore = new Socket(getAddress(), new Integer(namingPort))) {
+            debug("Free");
             return true;
         } catch (IOException e) {
+            debug("Not free: " + e.getMessage());
             return false;
         }
     }
@@ -129,6 +133,8 @@ public abstract class AbstractJBossMBeanMojo
             info("Checking " + url);
             final HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             try {
+                conn.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(1));
+                conn.setReadTimeout((int) TimeUnit.SECONDS.toMillis(5));
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setRequestProperty("Accept", "application/json");
@@ -147,7 +153,8 @@ public abstract class AbstractJBossMBeanMojo
             } finally {
                 conn.disconnect();
             }
-        } catch (IOException e) {
+        } catch (Throwable e) {
+            debug("Exception " + e.getMessage());
             return false;
         }
     }
