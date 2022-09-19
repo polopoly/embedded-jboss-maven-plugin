@@ -114,8 +114,17 @@ public class JBossStopMojo extends JBossStartMojo {
         } else {
             info("JBoss seems to be already down");
         }
+        int maxStopRetry = retry;
         while(!isNamingPortFree()) {
             sleep("Interrupted while waiting for JBoss to stop");
+            if (jbossWaitLock && !jbossLock.exists()) {
+                warn("port is still occupied but lock file does not exists anymore, exit.");
+                break;
+            }
+            if (maxStopRetry-- <= 0) {
+                warn("We waited " + retry + " seconds but jboss does not seems to be stopped yet");
+                break;
+            }
         }
         debug("jbossWaitLock -> " + jbossWaitLock);
         if (jbossWaitLock && jbossLock.exists()) {
