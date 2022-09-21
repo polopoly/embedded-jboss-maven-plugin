@@ -159,7 +159,7 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
     }
 
     /**
-     * Determine if jboss is installed
+     * Determine if adm is installed
      * @return
      */
     protected boolean isAdmInstalled() {
@@ -203,6 +203,10 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
      */
     protected void installAdmIfNotAlreadyInstalled() throws MojoExecutionException, MojoFailureException {
         if (shouldStartAdm() && (reinstall || !isAdmInstalled())) {
+            if (isAdmPortRunning()) {
+                throw new MojoExecutionException("ADM is still running but the install directory is missing, " +
+                    "you have to kill it manually, check the pid in the '/internal/running' response.");
+            }
             info("Installing ADM Content Services");
             try {
                 setupAdmDistributionFile();
@@ -229,6 +233,11 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
                     updateInstall = true;
                 }
                 if (updateInstall) {
+                    if (isAdmPortRunning()) {
+                        throw new MojoExecutionException("ADM is still running, you have to stop it calling " +
+                            new File(new File(admHome, "bin"), "run.sh").getAbsolutePath() +
+                            " --stop -p " + admPort);
+                    }
                     info("repeat adm install");
                     doInstallAdm(false);
                 }
