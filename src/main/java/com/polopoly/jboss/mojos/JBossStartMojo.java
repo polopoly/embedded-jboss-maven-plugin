@@ -352,7 +352,7 @@ public class JBossStartMojo
 
     protected String[] createWindowsCommand(final String cmdName,
                                             final List<String> startOpts) {
-        final String windowsCommand = cmdName + ".bat";
+        final String windowsCommand = ".\\" + cmdName.replaceAll("/", "\\\\") + ".bat";
 
         List<String> commandWithOptions = new ArrayList<>(Arrays.asList("cmd", "/c"));
         commandWithOptions.add(windowsCommand);
