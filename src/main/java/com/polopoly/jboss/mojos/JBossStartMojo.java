@@ -12,6 +12,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -148,9 +150,56 @@ public class JBossStartMojo
             while(!isNamingPortFree()) {
                 sleep("Interrupted while waiting for JBoss to stop");
             }
+            waitForJBossProcessExit();
         } catch (MojoExecutionException e) {
             warn("cannot stop jboss: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Keep the started process in the plugin context so the stop goal (a different execution
+     * of this plugin in the same project) can wait for it to really exit.
+     */
+    @SuppressWarnings("unchecked")
+    protected void rememberJBossProcess(final Process proc) {
+        final Map context = getPluginContext();
+        if (context != null) {
+            context.put(jbossProcessKey(), proc);
+        }
+    }
+
+    /**
+     * JBoss stops answering on the naming port and reports itself as not started before the
+     * shutdown is complete: the deployments are undeployed and the server tmp directory is
+     * cleaned up afterwards. Wait for the process started by us (run.sh waits for the JVM)
+     * so the following build steps do not see files disappearing under their feet.
+     */
+    protected void waitForJBossProcessExit() {
+        final Map context = getPluginContext();
+        if (context == null) {
+            return;
+        }
+        final Process proc = (Process) context.remove(jbossProcessKey());
+        if (proc == null) {
+            debug("JBoss has not been started by this build, cannot wait for its process");
+            return;
+        }
+        final long timeoutSeconds = (long) retry * retryWait;
+        info("Waiting for JBoss process to exit (for max " + timeoutSeconds + " seconds)");
+        try {
+            if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
+                info("JBoss process exited with status " + proc.exitValue());
+            } else {
+                warn("JBoss process did not exit after " + timeoutSeconds + " seconds");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            warn("Interrupted while waiting for JBoss process to exit");
+        }
+    }
+
+    private String jbossProcessKey() {
+        return "jboss.process:" + jbossHome.getAbsolutePath();
     }
 
     private boolean isStarted(final JBossOperations operations) {
@@ -203,6 +252,7 @@ public class JBossStartMojo
                 Process proc = pb.start();
                 new JBossLogger(proc.getInputStream(), "out", logToConsole).start();
                 new JBossLogger(proc.getErrorStream(), "err", logToConsole).start();
+                rememberJBossProcess(proc);
             } catch (Exception ioe) {
                 throw new MojoExecutionException("Unable to startIfNamingPortIsFree jboss!", ioe);
             }

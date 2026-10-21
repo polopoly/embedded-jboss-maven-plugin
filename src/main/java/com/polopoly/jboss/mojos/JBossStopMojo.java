@@ -139,6 +139,7 @@ public class JBossStopMojo extends JBossStartMojo {
                 debug("jbossLock exists? " + jbossLock.exists());
             }
         }
+        waitForJBossProcessExit();
         info("JBOSS stopped!");
     }
 
