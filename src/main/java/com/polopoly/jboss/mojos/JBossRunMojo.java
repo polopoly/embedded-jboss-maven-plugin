@@ -18,13 +18,12 @@ package com.polopoly.jboss.mojos;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
 
 /**
  * Same as jboss:start but will run in a foreground process logging to the console.
- *
- * @goal run
- * @aggregator
  */
+@Mojo(name = "run", aggregator = true)
 public class JBossRunMojo extends JBossStartMojo
 {
     public void execute() throws MojoExecutionException, MojoFailureException {

@@ -2,54 +2,58 @@ package com.polopoly.jboss;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.manager.WagonManager;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.wagon.authentication.AuthenticationInfo;
+import org.apache.maven.settings.Server;
+import org.apache.maven.settings.Settings;
+import org.apache.maven.settings.building.SettingsProblem;
+import org.apache.maven.settings.crypto.DefaultSettingsDecryptionRequest;
+import org.apache.maven.settings.crypto.SettingsDecrypter;
+import org.apache.maven.settings.crypto.SettingsDecryptionResult;
 
 public abstract class AbstractJBossMojo extends AbstractMojo {
 
     /**
-     * The Maven Wagon manager to use when obtaining server authentication details.
-     *
-     * @component role="org.apache.maven.artifact.manager.WagonManager"
+     * The Maven settings, used to obtain server authentication details.
      */
-    private WagonManager wagonManager;
+    @Parameter(defaultValue = "${settings}", readonly = true)
+    private Settings settings;
+
+    /**
+     * Used to decrypt the server passwords found in Maven settings.xml.
+     */
+    @Component
+    private SettingsDecrypter settingsDecrypter;
 
     /**
      * The id of the server configuration found in Maven settings.xml. This configuration will determine the
      * username/password to use when authenticating with the JBoss server. If no value is specified, a default username
      * and password will be used.
-     *
-     * @parameter default-value="default" expression="${jboss.serverId}"
      */
+    @Parameter(property = "jboss.serverId", defaultValue = "default")
     protected String serverId;
 
     /**
      * The local repository where the artifacts are located.
-     *
-     * @parameter expression="${localRepository}"
-     * @required
-     * @readonly
      */
+    @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
     private ArtifactRepository localRepository;
-    
+
     /**
       * The Maven project object.
-      *
-      * @parameter expression="${project}"
-      * @required
-      * @readonly
       */
+    @Parameter(defaultValue = "${project}", required = true, readonly = true)
     private MavenProject project;
 
-    /** @component */
+    @Component
     private ArtifactResolver resolver;
 
-    /** @component */
+    @Component
     private ArtifactFactory factory;
 
     /**
@@ -90,48 +94,51 @@ public abstract class AbstractJBossMojo extends AbstractMojo {
     /**
      * Get the username configured in the Maven settings.xml
      *
-     * @return username
-     * @throws org.apache.maven.plugin.MojoExecutionException if the server is not configured in settings.xml
+     * @return username, null if the server is not configured in settings.xml
+     * @throws MojoExecutionException if the server password cannot be decrypted
      */
     protected String getUsername()
         throws MojoExecutionException
     {
-        if ( serverId != null )
-        {
-            // obtain authentication details for specified server from wagon
-            AuthenticationInfo info = wagonManager.getAuthenticationInfo( serverId );
-            if ( info == null )
-            {
-                throw new MojoExecutionException( "Server not defined in settings.xml: " + serverId );
-            }
-
-            return info.getUserName();
-        }
-
-        return null;
+        Server server = getServer();
+        return server != null ? server.getUsername() : null;
     }
 
     /**
      * Get the password configured in Maven settings.xml
      *
-     * @return The password from settings.xml
-     * @throws MojoExecutionException if the server is not configured in settings.xml
+     * @return The password from settings.xml, null if the server is not configured in settings.xml
+     * @throws MojoExecutionException if the server password cannot be decrypted
      */
     protected String getPassword()
         throws MojoExecutionException
     {
-        if ( serverId != null )
-        {
-            // obtain authentication details for specified server from wagon
-            AuthenticationInfo info = wagonManager.getAuthenticationInfo( serverId );
-            if ( info == null )
-            {
-                throw new MojoExecutionException( "Server not defined in settings.xml: " + serverId );
-            }
+        Server server = getServer();
+        return server != null ? server.getPassword() : null;
+    }
 
-            return info.getPassword();
+    /**
+     * Find the (decrypted) server with id {@link #serverId} in Maven settings.xml, matching the id ignoring case
+     * like the Maven 2 WagonManager did.
+     */
+    private Server getServer()
+        throws MojoExecutionException
+    {
+        if (serverId == null || settings == null) {
+            return null;
         }
-
+        for (Server server : settings.getServers()) {
+            if (serverId.equalsIgnoreCase(server.getId())) {
+                SettingsDecryptionResult result = settingsDecrypter.decrypt(new DefaultSettingsDecryptionRequest(server));
+                for (SettingsProblem problem : result.getProblems()) {
+                    if (problem.getSeverity() != SettingsProblem.Severity.WARNING) {
+                        throw new MojoExecutionException("Unable to decrypt server " + serverId + " from settings.xml: "
+                                                         + problem.getMessage());
+                    }
+                }
+                return result.getServer();
+            }
+        }
         return null;
     }
 

@@ -5,21 +5,21 @@ import java.util.List;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import com.polopoly.jboss.JBossOperations;
 
 /**
  * Will stop the JBoss server started with jboss:start
- * @goal stop
- * @aggregator
  */
+@Mojo(name = "stop", aggregator = true)
 public class JBossStopMojo extends JBossStartMojo {
 
     /**
      * Wait for locks to disappear when stopping
-     *
-     * @parameter default-value="false" expression="${jboss.waitLock}"
      */
+    @Parameter(property = "jboss.waitLock", defaultValue = "false")
     protected boolean jbossWaitLock;
 
     public void execute() throws MojoExecutionException, MojoFailureException {

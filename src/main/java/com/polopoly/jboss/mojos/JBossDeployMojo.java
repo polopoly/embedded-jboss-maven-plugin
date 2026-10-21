@@ -7,30 +7,28 @@ import java.net.URL;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import com.polopoly.jboss.ArtifactData;
 import com.polopoly.jboss.JBossOperations;
 
 /**
  * Will deploy files into a running JBoss instance
- *
- * @goal deploy
- * @aggregator
  */
+@Mojo(name = "deploy", aggregator = true)
 public class JBossDeployMojo extends JBossInstallMojo {
 
     /**
      * File to be deployed
-     *
-     * @parameter expression="${jboss.deploy.file}"
      */
+    @Parameter(property = "jboss.deploy.file")
     protected File file;
 
     /**
      * Artifacts to be deployed (in the form of array of artifact coordinates)
-     * 
-     * @parameter
      */
+    @Parameter
     protected ArtifactData[] deployments = new ArtifactData[0];
 
 

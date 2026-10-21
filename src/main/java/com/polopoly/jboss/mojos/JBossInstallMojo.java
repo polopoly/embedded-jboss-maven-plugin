@@ -8,6 +8,8 @@ import java.util.List;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.Expand;
 
 import com.polopoly.jboss.AbstractJBossMBeanMojo;
@@ -17,121 +19,111 @@ import com.polopoly.jboss.JBossDistribution;
 
 /**
  * Will download and install a pre-configured JBoss Application Server
- *
- * @goal install
- * @aggregator
  */
+@Mojo(name = "install", aggregator = true)
 public class JBossInstallMojo extends AbstractJBossMBeanMojo {
 
     /**
      * The location of JBoss Home.
-     *
-     * @parameter expression="${project.build.directory}/embedded-jboss"
-     * @required
      */
+    @Parameter(defaultValue = "${project.build.directory}/embedded-jboss", required = true)
     protected File jbossHome;
 
     /**
      * The jboss distribution (in the form of artifact coordinates).
-     * @parameter
      */
+    @Parameter
     protected JBossDistribution jbossDistribution = JBossDistribution.DEFAULT_JBOSS_DISTRIUTION;
 
     /**
      * The jboss distribution (in the form of path to file). If specified takes precedence over jbossDistribution.
-     * @parameter
      */
+    @Parameter
     protected File jbossDistributionFile;
 
     /**
      * Patch artifacts that will be applied to the supplied server id
-     * @parameter
      */
+    @Parameter
     protected ArtifactData[] serverPatches = new ArtifactData[0];
 
     /**
      * Patch files that will be applied to the supplied server id
-     * @parameter
      */
+    @Parameter
     protected File[] serverPatchFiles = new File[0];
 
 
     /**
      * Patch artifacts that will be applied to the jboss distribution
-     * @parameter
      */
+    @Parameter
     protected ArtifactData[] jbossPatches = new ArtifactData[0];
 
     /**
      * Patch files that will be applied to the jboss distribution
-     * @parameter
      */
+    @Parameter
     protected File[] jbossPatchFiles = new File[0];
 
     /**
      * Force re-installation of jboss
-     * @parameter default-value="false" expression="${jboss.reinstall}"
      */
+    @Parameter(property = "jboss.reinstall", defaultValue = "false")
     protected boolean reinstall;
 
     /**
      * The location of the JBOSS lock file.
-     *
-     * @parameter default-value="${project.build.directory}/embedded-jboss/server/default/tmp/run.pid"
      */
+    @Parameter(defaultValue = "${project.build.directory}/embedded-jboss/server/default/tmp/run.pid")
     protected File jbossLock;
 
     /**
      * The location of ADM Content Services Home.
-     *
-     * @parameter default-value="${project.build.directory}/embedded-adm"
-     * @required
      */
+    @Parameter(defaultValue = "${project.build.directory}/embedded-adm", required = true)
     protected File admHome;
 
     /**
      * The location of ADM Content Services data.
-     *
-     * @parameter
      */
+    @Parameter
     protected File admData;
 
     /**
      * The location of ADM Content Services lock file.
-     *
-     * @parameter default-value="${project.build.directory}/embedded-adm/locks/adm.lock"
-     * @required
      */
+    @Parameter(defaultValue = "${project.build.directory}/embedded-adm/locks/adm.lock", required = true)
     protected File admLock;
 
     /**
      * The adm content services distribution (in the form of artifact coordinates).
-     * @parameter
      */
+    @Parameter
     protected AdmDistribution admDistribution;
 
     /**
      * The adm content services distribution (in the form of path to file). If specified takes precedence over admDistribution.
-     * @parameter
      */
+    @Parameter
     protected File admDistributionFile;
 
     /**
      * Patch artifacts that will be applied to the supplied server id
-     * @parameter
      */
+    @Parameter
     protected ArtifactData[] admPatches = new ArtifactData[0];
 
     /**
      * Patch files that will be applied to the supplied server id
-     * @parameter
      */
+    @Parameter
     protected File[] admPatchFiles = new File[0];
 
     /**
      * Force re-installation of adm content services
-     * @parameter default-value="false" expression="${adm.reinstall}"
      */
+    @Parameter(property = "adm.reinstall", defaultValue = "false")
     protected boolean admUpdate;
 
 

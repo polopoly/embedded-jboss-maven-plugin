@@ -17,6 +17,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 import com.polopoly.jboss.Environment;
 import com.polopoly.jboss.JBossOperations;
@@ -24,32 +26,27 @@ import com.polopoly.jboss.JBossOperations;
 /**
  * Will download, install, and start a pre-configured JBoss Application Server on localhost and deploy all listed deployments.
  * If the installation directory already exists it will only be started.
- *
- * @goal start
- * @aggregator
  */
+@Mojo(name = "start", aggregator = true)
 public class JBossStartMojo
     extends JBossDeployMojo
 {
     /**
      * The set of options to pass to the JBoss "run" command.
-     *
-     * @parameter default-value="" expression="${jboss.startOptions}"
      */
+    @Parameter(property = "jboss.startOptions", defaultValue = "")
     protected String startOptions;
 
     /**
      * Custom environment variables to pass to the JBoss "run" command.
-     *
-     * @parameter
      */
+    @Parameter
     protected Environment[] environments;
 
     /**
      * If true, pipes stdout and stderr from the jboss process to the maven console.
-     *
-     * @parameter default-value="false" expression="${jboss.logToConsole}"
      */
+    @Parameter(property = "jboss.logToConsole", defaultValue = "false")
     protected boolean logToConsole;
 
     /**
@@ -59,37 +56,32 @@ public class JBossStartMojo
 
     /**
      * Custom environment variables to pass to the ADM "run" command.
-     *
-     * @parameter
      */
+    @Parameter
     protected Environment[] admEnvironments;
 
     /**
      * The set of system options to pass to the ADM "run" command.
-     *
-     * @parameter default-value="" expression="${jboss.admSystemOptions}"
      */
+    @Parameter(property = "jboss.admSystemOptions", defaultValue = "")
     protected String admSystemOptions;
 
     /**
      * The set of options to pass to the ADM "run" command.
-     *
-     * @parameter default-value="" expression="${jboss.admStartOptions}"
      */
+    @Parameter(property = "jboss.admStartOptions", defaultValue = "")
     protected String admStartOptions;
 
     /**
      * The set of system options to pass to the ADM "run" command.
-     *
-     * @parameter default-value="" expression="${jboss.admSettings}"
      */
+    @Parameter(property = "jboss.admSettings", defaultValue = "")
     protected String admSettings;
 
     /**
      * The set of system options to pass to the ADM "run" command.
-     *
-     * @parameter default-value="" expression="${project.build.directory}/embedded-adm/conf/settings.yml"
      */
+    @Parameter(defaultValue = "${project.build.directory}/embedded-adm/conf/settings.yml")
     protected File admSettingsFile;
 
     /**

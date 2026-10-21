@@ -17,6 +17,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.jboss.security.SecurityAssociation;
 import org.jboss.security.SimplePrincipal;
 import org.jnp.interfaces.NamingContext;
@@ -26,37 +27,33 @@ public abstract class AbstractJBossMBeanMojo
 {
     /**
      * Maximum number of retries to get JBoss JMX MBean connection.
-     *
-     * @parameter default-value="60" expression="${jboss.retry}"
      */
+    @Parameter(property = "jboss.retry", defaultValue = "60")
     protected int retry;
 
     /**
      * Wait in seconds before each retry of the JBoss JMX MBean connection.
-     *
-     * @parameter default-value="1" expression="${jboss.retryWait}"
      */
+    @Parameter(property = "jboss.retryWait", defaultValue = "1")
     protected int retryWait;
 
     /**
      * The port for the naming service.
-     *
-     * @parameter default-value="1099" expression="${jboss.namingPort}"
      */
+    @Parameter(property = "jboss.namingPort", defaultValue = "1099")
     protected String namingPort;
 
     /**
      * The ip to bind to. Defaults to localhost, but can be changed when needed,
      * for example use -Djboss.bindAddress=0.0.0.0 to bind to all interfaces.
-     * @parameter default-value="localhost" expression="${jboss.bindAddress}"
      */
+    @Parameter(property = "jboss.bindAddress", defaultValue = "localhost")
     protected String bindAddress;
 
     /**
      * The port for the adm content service.
-     *
-     * @parameter default-value="8090" expression="${jboss.admPort}"
      */
+    @Parameter(property = "jboss.admPort", defaultValue = "8090")
     protected String admPort;
 
     private volatile MBeanServerConnection _connection;
