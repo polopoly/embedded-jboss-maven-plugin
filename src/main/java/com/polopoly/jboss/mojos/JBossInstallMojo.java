@@ -297,11 +297,13 @@ public class JBossInstallMojo extends AbstractJBossMBeanMojo {
         return patchList;
     }
 
-    private static void unzip(File src, File target) throws MojoExecutionException {
+    static void unzip(File src, File target) throws MojoExecutionException {
         Expand expander = new Expand();
         expander.setSrc(src);
-        expander.setDest(target);
         try {
+            // Expand checks every entry is inside the destination comparing canonical paths with the destination
+            // path as given, so a target with ".." (e.g. mvn -f dist/../pom.xml) or a symlink would be rejected.
+            expander.setDest(target.getCanonicalFile());
             expander.execute();
         } catch (Exception e) {
             throw new MojoExecutionException("Unable to expand jboss archive", e);
